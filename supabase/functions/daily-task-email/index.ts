@@ -1,13 +1,13 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
-const supabaseUrl = Deno.env.get("SUPABASE_URL") "";
+const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
 const supabaseKey =
-  Deno.env.get("SUPABASE_SECRET_KEY") 
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") 
+  Deno.env.get("SUPABASE_SECRET_KEY") ||
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ||
   "";
-const resendApiKey = Deno.env.get("RESEND_API_KEY") "";
-const emailFrom = Deno.env.get("EMAIL_FROM") "Paddocke <onboarding@resend.dev>";
-const cronSecret = Deno.env.get("CRON_SECRET") "";
+const resendApiKey = Deno.env.get("RESEND_API_KEY") || "";
+const emailFrom = Deno.env.get("EMAIL_FROM") || "Paddocke <onboarding@resend.dev>";
+const cronSecret = Deno.env.get("CRON_SECRET") || "";
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
@@ -34,7 +34,7 @@ function normalizeTime(value: unknown) {
 }
 
 function escapeHtml(value: unknown) {
-  return String(value "")
+  return String(value || "")
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
@@ -46,7 +46,7 @@ function buildTaskList(tasks: Array<{ title: string; category: string; due_time:
 
   return tasks
     .map((task) => {
-      const time = task.due_time normalizeTime(task.due_time) : "Sem horário";
+      const time = task.due_time ? normalizeTime(task.due_time) : "Sem horário";
       return `<li style="margin:0 0 12px"><strong>${escapeHtml(task.title)}</strong><br><span style="color:#667085">${escapeHtml(time)} - ${escapeHtml(task.category)}</span></li>`;
     })
     .join("");
@@ -85,7 +85,7 @@ Deno.serve(async (request) => {
   let sent = 0;
   const errors: Array<{ user_id: string; message: string }> = [];
 
-  for (const preference of preferences []) {
+  for (const preference of preferences || []) {
     const parts = localParts(preference.timezone || "America/Manaus");
     const today = `${parts.year}-${parts.month}-${parts.day}`;
     const currentTime = `${parts.hour}:${parts.minute}`;
@@ -118,7 +118,7 @@ Deno.serve(async (request) => {
         from: emailFrom,
         to: [preference.email],
         subject: `Paddocke: suas tarefas de ${parts.day}/${parts.month}`,
-        html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;color:#101828"><h1 style="color:#176fdc">Seu dia no Paddocke</h1><p>Estas são suas tarefas pendentes para hoje:</p><ul style="padding-left:20px">${buildTaskList(tasks [])}</ul><p style="color:#667085">Um passo de cada vez.</p></div>`
+        html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;color:#101828"><h1 style="color:#176fdc">Seu dia no Paddocke</h1><p>Estas são suas tarefas pendentes para hoje:</p><ul style="padding-left:20px">${buildTaskList(tasks || [])}</ul><p style="color:#667085">Um passo de cada vez.</p></div>`
       })
     });
 
@@ -144,7 +144,7 @@ Deno.serve(async (request) => {
   }
 
   return Response.json({
-    checked: preferences.length 0,
+    checked: preferences?.length || 0,
     due,
     sent,
     errors

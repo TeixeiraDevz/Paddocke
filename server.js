@@ -125,6 +125,55 @@ function normalizeAssistantResult(result, body) {
   return result;
 }
 
+function describeServerTasks(tasks, label) {
+  if (!tasks.length) return `Você não tem tarefas ${label}.`;
+  const list = tasks
+    .slice(0, 6)
+    .map((task, index) => `${index + 1}. ${task.title}${task.time ? `, às ${task.time}` : ""}`)
+    .join(" ");
+  const extra = tasks.length > 6 ? ` E mais ${tasks.length - 6}.` : "";
+  return `Você tem ${tasks.length} ${tasks.length === 1 ? "tarefa" : "tarefas"} ${label}: ${list}.${extra}`;
+}
+
+function createDeterministicAssistantResponse(body, tasks) {
+  const normalized = normalizeCommandText(body.command);
+  const profile = body.profile || {};
+
+  if (
+    normalized.includes("nivel") ||
+    normalized.includes("experiencia") ||
+    normalized.includes("patente") ||
+    normalized.includes("progresso") ||
+    normalized.includes("xp")
+  ) {
+    if (!profile.rank) return null;
+    const xpLabel = profile.xpLabel ? `, com ${profile.xpLabel}` : "";
+    const reply = profile.next
+      ? `Você está no nível ${profile.level}, patente ${profile.rank}${xpLabel}. A próxima patente é ${profile.next.name}.`
+      : `Você está no nível ${profile.level}, patente ${profile.rank}${xpLabel}. Essa é a patente máxima do Paddocke.`;
+    return { reply, action: { type: "none" } };
+  }
+
+  if (
+    normalized.includes("tarefas") &&
+    (normalized.includes("hoje") || normalized.includes("o que fazer") || normalized.includes("meu dia"))
+  ) {
+    const todayTasks = tasks.filter((task) => task.date === body.today && !task.completed);
+    return { reply: describeServerTasks(todayTasks, "para hoje"), action: { type: "none" } };
+  }
+
+  if (
+    normalized.includes("iniciar pomodoro") ||
+    normalized.includes("ativar pomodoro") ||
+    normalized.includes("iniciar foco") ||
+    normalized.includes("modo foco")
+  ) {
+    return { reply: "Pomodoro de 25 minutos iniciado. Hora de focar.", action: { type: "start_pomodoro" } };
+  }
+
+  return null;
+}
+
 async function createAiResponse(body) {
   if (!process.env.OPENAI_API_KEY) return null;
   const tasks = (body.tasks || []).slice(0, 100).map((task) => ({
@@ -135,6 +184,9 @@ async function createAiResponse(body) {
     time: task.time,
     completed: task.completed
   }));
+  const deterministicResult = createDeterministicAssistantResponse(body, tasks);
+  if (deterministicResult) return deterministicResult;
+
   const prompt = [
     "Você é o assistente por voz do Paddocke, um planejador pessoal.",
     "Responda em português brasileiro, de forma curta e natural para ser falada.",

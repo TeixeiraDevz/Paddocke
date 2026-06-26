@@ -63,6 +63,7 @@ const icons = {
   moon: '<path d="M20.5 14.5A8 8 0 0 1 9.5 3.5 8.5 8.5 0 1 0 20.5 14.5Z"/>',
   more: '<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>',
   pause: '<path d="M9 5v14M15 5v14"/>',
+  pencil: '<path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4 11.5-11.5Z"/><path d="m14 6 4 4"/>',
   play: '<path d="m8 5 11 7-11 7V5Z"/>',
   plus: '<path d="M12 5v14M5 12h14"/>',
   rotate: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>',
@@ -266,6 +267,7 @@ let remoteSyncQueued = false;
 let floatingPomodoroDismissed = false;
 let floatingPomodoroDrag = null;
 let pomodoroHistoryExpanded = false;
+let editingTaskId = null;
 
 const pomodoro = {
   mode: "focus",
@@ -407,7 +409,10 @@ async function syncRemoteWorkspace() {
   if (!hasRemoteWorkspace()) return;
   remoteSyncing = true;
   try {
-    await supabaseClient.from("profiles").upsert(getProfilePayload(), { onConflict: "id" });
+    const { error: profileError } = await supabaseClient.from("profiles").upsert(getProfilePayload(), {
+      onConflict: "id"
+    });
+    if (profileError) throw profileError;
     await syncRemoteTasks();
     await syncRemoteNotificationPreferences();
   } catch (error) {
@@ -871,7 +876,7 @@ async function initializeAuth() {
   if (supabaseClient) {
     const redirectError = getAuthRedirectError();
     const { data } = await supabaseClient.auth.getSession();
-    if (data.session.user) {
+    if (data.session?.user) {
       clearAuthCallbackUrl();
       enterApp(data.session.user);
     } else {
@@ -885,7 +890,7 @@ async function initializeAuth() {
       }
     }
     supabaseClient.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_IN" && session.user) {
+      if (event === "SIGNED_IN" && session?.user) {
         clearAuthCallbackUrl();
         sessionStorage.removeItem("paddocke-auth-mode-before-google");
         enterApp(session.user);
@@ -1069,6 +1074,7 @@ function renderTasks() {
             </div>
           </div>
           <div class="task-actions">
+            <button class="icon-button" data-action="edit-task" aria-label="Editar tarefa">${icon("pencil")}</button>
             ${!task.completed && pomodoroCategories.has(task.category) ? `<button class="icon-button focus-task-button" data-action="focus-task" aria-label="Iniciar Pomodoro nesta tarefa">${icon("timer")}</button>` : ""}
             <button class="icon-button" data-action="delete-task" aria-label="Excluir tarefa">${icon("trash")}</button>
           </div>
@@ -1188,7 +1194,7 @@ function renderRankRoadmap() {
           <strong>${patent.name}</strong>
           <span>Nível ${patent.level}</span>
         </div>
-        <b>${formatNumber(patent.xp)} XP</b>
+        <b>${patent.name === "Kwita" ? `${formatNumber(patent.xp)} XP - máxima` : `${formatNumber(patent.xp)} XP`}</b>
       </div>
     `;
   }).join("");
@@ -1218,7 +1224,7 @@ function renderProfile() {
   document.querySelector("#profile-location").textContent = state.profile.location || "Brasil";
   document.querySelector("#profile-joined-date").textContent = joinedLabel;
   document.querySelector("#profile-rank-name").textContent = game.rank;
-  document.querySelector("#profile-rank-level").textContent = `Nível ${game.level}`;
+  document.querySelector("#profile-rank-level").textContent = game.next ? `Nível ${game.level}` : `Nível ${game.level} - Dono`;
   document.querySelector("#profile-rank-xp").textContent = game.xpLabel;
   document.querySelector("#profile-rank-fill").style.width = `${game.levelXp}%`;
   rankCard.style.setProperty("--rank-color", game.current.color);
@@ -1374,6 +1380,7 @@ function renderCalendarDayPanel() {
                   <input type="date" value="${task.date}" data-calendar-move-date>
                 </label>
                 <button class="ghost-button" type="button" data-calendar-action="move-task">Mover</button>
+                <button class="ghost-button" type="button" data-calendar-action="edit-task">Editar</button>
                 <button class="danger-button" type="button" data-calendar-action="delete-task">Excluir</button>
               </div>
             </article>
@@ -1458,6 +1465,7 @@ function handleCalendarTaskAction(event) {
 
   const action = button.dataset.calendarAction;
   if (action === "toggle-task") toggleTask(taskId);
+  if (action === "edit-task") openTaskModal(selectedDate || localDateKey(), taskId);
   if (action === "delete-task") deleteCalendarTask(taskId);
   if (action === "move-task") {
     const nextDate = item.querySelector("[data-calendar-move-date]")?.value;
@@ -1542,15 +1550,33 @@ function capitalize(value) {
   return value.charAt(0).toLocaleUpperCase("pt-BR") + value.slice(1);
 }
 
-function openTaskModal(date = selectedDate || localDateKey()) {
+function setTaskModalMode(task = null) {
   const modal = document.querySelector("#task-modal");
+  const isEditing = Boolean(task);
+  modal.querySelector(".section-kicker").textContent = isEditing ? "EDITAR TAREFA" : "NOVA TAREFA";
+  modal.querySelector("h2").textContent = isEditing ? "Atualize os detalhes" : "O que precisa ser feito";
+  modal.querySelector('button[type="submit"]').textContent = isEditing ? "Salvar tarefa" : "Criar tarefa";
+}
+
+function openTaskModal(date = selectedDate || localDateKey(), taskId = null) {
+  const modal = document.querySelector("#task-modal");
+  const task = taskId ? state.tasks.find((item) => item.id === taskId) : null;
+  editingTaskId = task?.id || null;
   document.querySelector("#task-form").reset();
-  document.querySelector("#task-date").value = date;
+  setTaskModalMode(task);
+  document.querySelector("#task-title").value = task?.title || "";
+  document.querySelector("#task-category").value = task?.category || "Pessoais";
+  document.querySelector("#task-date").value = task?.date || date;
+  document.querySelector("#task-time").value = task?.time || "";
+  document.querySelector("#task-priority").value = task?.priority || "medium";
+  document.querySelector("#task-notes").value = task?.notes || "";
   modal.showModal();
   window.setTimeout(() => document.querySelector("#task-title").focus(), 80);
 }
 
 function closeTaskModal() {
+  editingTaskId = null;
+  setTaskModalMode();
   document.querySelector("#task-modal").close();
 }
 
@@ -1571,6 +1597,21 @@ function addTask(taskData, source = "manual") {
   saveState();
   renderAll();
   if (source === "manual") showToast("Tarefa criada com sucesso.", "success");
+  return task;
+}
+
+function updateTask(taskId, taskData) {
+  const task = state.tasks.find((item) => item.id === taskId);
+  if (!task) return null;
+  task.title = taskData.title.trim();
+  task.category = taskData.category || "Pessoais";
+  task.date = taskData.date || localDateKey();
+  task.time = taskData.time || "";
+  task.priority = taskData.priority || "medium";
+  task.notes = taskData.notes || "";
+  saveState();
+  renderAll();
+  showToast("Tarefa atualizada com sucesso.", "success");
   return task;
 }
 
@@ -1741,17 +1782,15 @@ async function saveNotificationPreferences(event) {
     return;
   }
 
-  const previous = state.notifications;
   state.notifications = { enabled, email, time, includeCompleted };
   saveState({ syncNotifications: false });
   status.textContent = "Salvando sua preferência...";
   const result = await syncNotificationData();
 
   if (!result) {
-    state.notifications = previous;
-    saveState({ syncNotifications: false });
-    status.textContent = "Não foi possível salvar. Tente novamente.";
-    showToast("A preferência não foi salva no servidor.");
+    updateNotificationIndicator();
+    closeNotificationModal();
+    showToast("Preferência salva localmente. O servidor de e-mail não confirmou agora.");
     return;
   }
 
@@ -2296,9 +2335,17 @@ function processLocalAssistantCommand(rawCommand, fromVoice = false) {
     showView("calendar");
     selectCalendarDate(date, { scrollToPanel: true });
     response = `Abri seu calendário em ${formatDisplayDate(date)}.`;
-  } else if (normalized.includes("nivel") || normalized.includes("experiencia") || normalized.includes("patente")) {
+  } else if (
+    normalized.includes("nivel") ||
+    normalized.includes("experiencia") ||
+    normalized.includes("patente") ||
+    normalized.includes("progresso") ||
+    normalized.includes("xp")
+  ) {
     const game = getGamification();
-    response = `Você está no nível ${game.level}, patente ${game.rank}, com ${state.xp} pontos de experiência no total.`;
+    response = game.next
+      ? `Você está no nível ${game.level}, patente ${game.rank}, com ${formatNumber(state.xp)} pontos de experiência. A próxima patente é ${game.next.name}.`
+      : `Você está no nível ${game.level}, patente ${game.rank}, com ${formatNumber(state.xp)} pontos de experiência no total. Essa é a patente máxima do Paddocke.`;
   } else if (
     normalized.includes("tarefas") ||
     normalized.includes("tenho para") ||
@@ -2688,7 +2735,9 @@ function bindEvents() {
   document.querySelector("#task-form").addEventListener("submit", (event) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    addTask(Object.fromEntries(formData.entries()));
+    const taskData = Object.fromEntries(formData.entries());
+    if (editingTaskId) updateTask(editingTaskId, taskData);
+    else addTask(taskData);
     closeTaskModal();
   });
 
@@ -2698,6 +2747,7 @@ function bindEvents() {
     if (!actionButton || !taskItem) return;
     const { taskId } = taskItem.dataset;
     if (actionButton.dataset.action === "toggle-task") toggleTask(taskId);
+    if (actionButton.dataset.action === "edit-task") openTaskModal(selectedDate || localDateKey(), taskId);
     if (actionButton.dataset.action === "delete-task") deleteTask(taskId);
     if (actionButton.dataset.action === "focus-task") selectTaskForFocus(taskId);
   });
