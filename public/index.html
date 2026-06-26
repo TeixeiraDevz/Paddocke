@@ -1,0 +1,824 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Paddocke: organize tarefas, mantenha o foco e evolua todos os dias."
+    />
+    <meta name="theme-color" content="#07101f" />
+    <title>Paddocke | Seu dia em movimento</title>
+    <link rel="icon" type="image/png" href="/assets/paddocke-favicon.png" />
+    <link rel="apple-touch-icon" href="/assets/paddocke-logo.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="ambient ambient-one"></div>
+    <div class="ambient ambient-two"></div>
+
+    <main class="auth-shell" id="auth-shell" aria-labelledby="auth-title">
+      <section class="auth-showcase" aria-label="Apresentação Paddocke">
+        <a class="auth-brand" href="#" aria-label="Paddocke">
+          <img src="/assets/paddocke-logo.png" alt="" width="56" height="56" />
+          <span>Paddocke</span>
+        </a>
+        <div class="auth-showcase-copy">
+          <span class="auth-kicker">SEU DIA EM MOVIMENTO</span>
+          <h1>Organize. Foque.<br /><span>Evolua.</span></h1>
+          <p>Transforme planos em progresso com tarefas, Pomodoro e uma assistente que trabalha com você.</p>
+        </div>
+        <div class="auth-preview-card">
+          <span class="auth-preview-icon" data-icon="check"></span>
+          <div>
+            <strong>Seu progresso, todos os dias</strong>
+            <small>Tarefas, foco e conquistas em um só lugar.</small>
+          </div>
+        </div>
+      </section>
+
+      <section class="auth-panel">
+        <button class="auth-theme-button" id="auth-theme-toggle" type="button" aria-label="Trocar tema do login" title="Trocar tema">
+          <span data-icon="sun"></span>
+        </button>
+
+        <div class="auth-mobile-brand">
+          <img src="/assets/paddocke-logo.png" alt="" width="46" height="46" />
+          <span>Paddocke</span>
+        </div>
+
+        <div class="auth-card">
+          <div class="auth-heading">
+            <span class="auth-kicker" id="auth-kicker">BEM-VINDO DE VOLTA</span>
+            <h2 id="auth-title">Entre na sua conta</h2>
+            <p id="auth-description">Continue organizando seu dia e avançando nos seus objetivos.</p>
+          </div>
+
+          <div class="auth-tabs" role="tablist" aria-label="Acesso a conta">
+            <button class="active" type="button" data-auth-view="login" role="tab" aria-selected="true">Entrar</button>
+            <button type="button" data-auth-view="signup" role="tab" aria-selected="false">Criar conta</button>
+          </div>
+
+          <form class="auth-form" id="auth-form">
+            <div class="auth-name-fields" id="auth-name-fields" hidden>
+              <label>
+                Nome
+                <span class="auth-field">
+                  <span data-icon="user"></span>
+                  <input id="auth-first-name" name="firstName" autocomplete="given-name" placeholder="Seu nome" />
+                </span>
+              </label>
+              <label>
+                Sobrenome
+                <span class="auth-field">
+                  <span data-icon="user"></span>
+                  <input id="auth-last-name" name="lastName" autocomplete="family-name" placeholder="Seu sobrenome" />
+                </span>
+              </label>
+            </div>
+
+            <label>
+              E-mail
+              <span class="auth-field">
+                <span data-icon="mail"></span>
+                <input id="auth-email" name="email" type="email" autocomplete="email" required placeholder="seu@email.com" />
+              </span>
+            </label>
+
+            <label class="auth-confirm-email" id="auth-confirm-email-label" hidden>
+              Confirmar e-mail
+              <span class="auth-field">
+                <span data-icon="mail"></span>
+                <input id="auth-email-confirm" name="emailConfirm" type="email" autocomplete="email" placeholder="repita seu e-mail" />
+              </span>
+            </label>
+
+            <label>
+              <span class="auth-label-row">
+                Senha
+                <button class="auth-link" id="forgot-password-button" type="button">Esqueceu a senha</button>
+              </span>
+              <span class="auth-field">
+                <span data-icon="lock"></span>
+                <input id="auth-password" name="password" type="password" autocomplete="current-password" required minlength="8" placeholder="Mínimo de 8 caracteres" />
+                <button class="password-toggle" id="password-toggle" type="button" aria-label="Mostrar senha">
+                  <span data-icon="eye"></span>
+                </button>
+              </span>
+            </label>
+
+            <label class="auth-terms" id="auth-terms" hidden>
+              <input id="auth-terms-checkbox" type="checkbox" />
+              <span>Eu aceito os <a href="#">Termos de Uso</a> e a <a href="#">Política de Privacidade</a></span>
+            </label>
+
+            <button class="auth-submit" id="auth-submit" type="submit">Entrar</button>
+            <p class="auth-status" id="auth-status" aria-live="polite"></p>
+            <div class="auth-help" id="google-auth-help" hidden>
+              <strong>Google Auth precisa de ajuste</strong>
+              <p>Confira se o OAuth do Google e o provider do Supabase estão usando o mesmo Client ID e Client Secret.</p>
+              <ul>
+                <li>Supabase callback: <code>https://egdltobtsldomxzlzhnt.supabase.co/auth/v1/callback</code></li>
+                <li>App callback local: <code>http://localhost:3000/auth/callback</code></li>
+                <li>Se o app estiver em teste no Google, seu e-mail precisa estar em usuários de teste.</li>
+              </ul>
+              <div class="auth-help-actions">
+                <button class="auth-link" id="retry-google-auth" type="button">Tentar Google novamente</button>
+                <button class="auth-link" id="use-email-auth" type="button">Usar e-mail e senha</button>
+              </div>
+            </div>
+          </form>
+
+          <div class="auth-divider"><span>ou</span></div>
+
+          <button class="google-auth-button" id="google-auth-button" type="button">
+            <span class="google-auth-mark" aria-hidden="true">G</span>
+            Continuar com Google
+          </button>
+
+          <p class="auth-switch-copy">
+            <span id="auth-switch-prompt">Ainda não tem uma conta</span>
+            <button class="auth-link" id="auth-switch-button" type="button">Cadastre-se</button>
+          </p>
+
+          <button class="demo-access-button" id="demo-access-button" type="button">
+            Explorar versão demonstrativa
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <div class="app-shell" id="app-shell" hidden>
+      <aside class="sidebar" id="sidebar">
+        <a class="brand" href="#" aria-label="Paddocke - início">
+          <span class="brand-mark">
+            <img src="/assets/paddocke-logo.png" alt="" width="38" height="38" />
+          </span>
+          <span>Paddocke</span>
+        </a>
+
+        <nav class="main-nav" aria-label="Navegação principal">
+          <button class="nav-item active" data-view="today">
+            <span class="nav-icon" data-icon="grid"></span>
+            <span>Meu dia</span>
+          </button>
+          <button class="nav-item" data-view="calendar">
+            <span class="nav-icon" data-icon="calendar"></span>
+            <span>Calendário</span>
+          </button>
+          <button class="nav-item" data-view="focus">
+            <span class="nav-icon" data-icon="timer"></span>
+            <span>Pomodoro</span>
+          </button>
+          <button class="nav-item" data-view="plans">
+            <span class="nav-icon" data-icon="sparkles"></span>
+            <span>Planos</span>
+            <span class="nav-badge">Novo</span>
+          </button>
+          <button class="nav-item" data-view="profile">
+            <span class="nav-icon" data-icon="user"></span>
+            <span>Perfil</span>
+          </button>
+        </nav>
+
+        <div class="sidebar-section">
+          <p class="sidebar-label">Espaços</p>
+          <button class="space-item active" data-category="all">
+            <span class="space-icon all" data-icon="grid"></span>
+            Todas as tarefas
+            <span class="space-count" id="count-all">0</span>
+          </button>
+          <button class="space-item" data-category="Pessoais">
+            <span class="space-icon personal" data-icon="book-open"></span>
+            Pessoais / Estudos
+            <span class="space-count" id="count-pessoais">0</span>
+          </button>
+          <button class="space-item" data-category="Faculdade">
+            <span class="space-icon college" data-icon="graduation-cap"></span>
+            Faculdade
+            <span class="space-count" id="count-faculdade">0</span>
+          </button>
+          <button class="space-item" data-category="Trabalho">
+            <span class="space-icon work" data-icon="briefcase"></span>
+            Trabalho
+            <span class="space-count" id="count-trabalho">0</span>
+          </button>
+          <button class="space-item" data-category="Treino">
+            <span class="space-icon workout" data-icon="dumbbell"></span>
+            Treino
+            <span class="space-count" id="count-treino">0</span>
+          </button>
+        </div>
+
+        <section class="assistant-card glass-card floating-assistant sidebar-assistant is-collapsed" id="assistant-card">
+          <div class="assistant-heading">
+            <button class="ai-avatar assistant-companion" id="assistant-float-toggle" type="button" aria-label="Abrir assistente de voz Paddocke" aria-expanded="false">
+              <span data-icon="sparkles"></span>
+            </button>
+            <div>
+              <span class="section-kicker">ASSISTENTE PADDOCKE</span>
+              <h3>Como posso ajudar</h3>
+            </div>
+            <i class="online-dot"></i>
+          </div>
+          <div class="assistant-message" id="assistant-message">
+            Toque no microfone e diga: "Quais sao minhas tarefas de hoje"
+          </div>
+          <form class="assistant-input" id="assistant-command-form">
+            <input
+              id="assistant-command-input"
+              type="text"
+              autocomplete="off"
+              placeholder="Digite um comando..."
+              aria-label="Digite um comando para o assistente"
+            />
+            <button type="submit" aria-label="Enviar comando">
+              <span data-icon="arrow-up"></span>
+            </button>
+          </form>
+          <div class="assistant-voice">
+            <button type="button" id="voice-button" aria-label="Falar com o assistente">
+              <span data-icon="mic"></span>
+              <span class="voice-button-copy">
+                <strong>Falar com o Paddocke</strong>
+                <small>Toque e diga seu comando</small>
+              </span>
+            </button>
+          </div>
+          <p class="voice-status" id="voice-status"></p>
+        </section>
+
+        <div class="sidebar-profile">
+          <div class="avatar" id="profile-avatar">NB<span class="status-dot"></span></div>
+          <div class="profile-copy">
+            <strong id="profile-name">Nicolas</strong>
+            <span id="sidebar-rank">Explorador I</span>
+          </div>
+          <button class="icon-button" aria-label="Sair da conta" title="Sair da conta" data-action="logout">
+            <span data-icon="log-out"></span>
+          </button>
+        </div>
+      </aside>
+      <button class="sidebar-backdrop" id="sidebar-backdrop" type="button" aria-label="Fechar menu"></button>
+
+      <main class="main-content">
+        <header class="topbar">
+          <button class="icon-button menu-button" id="menu-button" aria-label="Abrir menu">
+            <span data-icon="menu"></span>
+          </button>
+
+          <div class="search-wrap">
+            <span class="search-icon" data-icon="search"></span>
+            <input id="search-input" type="search" placeholder="Buscar tarefas ou projetos..." />
+            <kbd>Ctrl K</kbd>
+          </div>
+
+          <div class="top-actions">
+            <div class="digital-clock" aria-label="Horário atual">
+              <strong id="clock-time">00:00</strong>
+              <span id="clock-period">AMT</span>
+            </div>
+            <button class="icon-button theme-button" id="theme-toggle" aria-label="Ativar tema claro" title="Trocar tema">
+              <span data-icon="sun"></span>
+            </button>
+            <button class="icon-button notification-button" id="notification-button" aria-label="Configurar notificações">
+              <span data-icon="bell"></span>
+              <i></i>
+            </button>
+            <button class="primary-button" id="add-task-button">
+              <span data-icon="plus"></span>
+              Nova tarefa
+            </button>
+          </div>
+        </header>
+
+        <div class="page-container">
+          <section class="view active" id="view-today">
+            <div class="welcome-row">
+              <div>
+                <p class="eyebrow" id="current-date-label">DOMINGO, 14 DE JUNHO</p>
+                <h1>Bom dia, Vitor.</h1>
+                <p class="welcome-subtitle" id="daily-summary">
+                  Vamos transformar seus planos em progresso.
+                </p>
+              </div>
+              <button class="ghost-button" id="open-calendar-button">
+                <span data-icon="calendar"></span>
+                Ver calendário
+              </button>
+            </div>
+
+            <div class="dashboard-grid">
+              <div class="main-column">
+                <section class="focus-hero glass-card" id="study-pomodoro-card">
+                  <div class="focus-copy">
+                    <span class="section-kicker"><i></i> POMODORO DE ESTUDOS</span>
+                    <h2>Pronto para avançar</h2>
+                    <p>Escolha uma tarefa e trabalhe sem distrações.</p>
+                    <button class="light-button" id="hero-focus-button">
+                      <span data-icon="play"></span>
+                      Iniciar Pomodoro
+                    </button>
+                  </div>
+                  <div class="hero-timer">
+                    <div class="timer-orbit orbit-one"></div>
+                    <div class="timer-orbit orbit-two"></div>
+                    <div class="timer-center">
+                      <span>25:00</span>
+                      <small>POMODORO</small>
+                    </div>
+                  </div>
+                </section>
+
+                <section class="tasks-section">
+                  <div class="section-heading">
+                    <div>
+                      <h2>Suas tarefas</h2>
+                      <p id="tasks-heading-copy">Prioridades para hoje</p>
+                    </div>
+                    <div class="task-filters" aria-label="Filtros de tarefa">
+                      <button class="filter-button active" data-filter="today">Hoje</button>
+                      <button class="filter-button" data-filter="upcoming">Próximas</button>
+                      <button class="filter-button" data-filter="completed">Concluídas</button>
+                    </div>
+                  </div>
+
+                  <div class="task-list" id="task-list"></div>
+                  <button class="add-inline-button" id="add-inline-button">
+                    <span data-icon="plus"></span>
+                    Adicionar uma tarefa
+                  </button>
+                </section>
+              </div>
+
+              <aside class="right-column">
+                <section class="progress-card glass-card">
+                  <div class="card-title-row">
+                    <div class="progress-rank-display">
+                      <img class="progress-rank-image" id="progress-rank-image" src="/assets/ranks/bronze.png?v=transparent" alt="Patente Bronze">
+                      <h3 class="progress-rank-name" id="rank-name">Explorador I</h3>
+                    </div>
+                    <span class="level-pill" id="level-pill">NÍVEL 1</span>
+                  </div>
+                  <div class="level-progress">
+                    <span class="section-kicker progress-label">SEU PROGRESSO</span>
+                    <div class="level-bar"><span id="level-bar-fill"></span></div>
+                    <div class="level-labels">
+                      <span id="xp-label">0 / 100 XP</span>
+                      <span id="xp-next">Próxima patente</span>
+                    </div>
+                  </div>
+                  <div class="streak-row">
+                    <div class="streak-icon"><span data-icon="flame"></span></div>
+                    <div>
+                      <strong id="streak-value">0 dias</strong>
+                      <span>Sequência atual</span>
+                    </div>
+                    <small>RECORDE <b id="streak-record">0</b></small>
+                  </div>
+                </section>
+
+                <section class="calendar-card glass-card">
+                  <div class="calendar-header">
+                    <div class="calendar-title-assistant">
+                      <span class="section-kicker">CALENDARIO</span>
+                      <div class="calendar-month-row">
+                        <h3 id="calendar-month-label">Junho 2026</h3>
+                      </div>
+                    </div>
+                    <div class="calendar-nav">
+                      <button class="icon-button small" id="calendar-prev" aria-label="Mes anterior">
+                        <span data-icon="chevron-left"></span>
+                      </button>
+                      <button class="icon-button small" id="calendar-next" aria-label="Proximo mes">
+                        <span data-icon="chevron-right"></span>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="mini-calendar" id="mini-calendar"></div>
+                  <div class="calendar-footer">
+                    <span><i></i> <b id="calendar-events-count">0 eventos</b> neste mes</span>
+                    <button id="google-calendar-button">Fazer Download Calendario</button>
+                  </div>
+                </section>
+              </aside>
+            </div>
+          </section>
+
+          <section class="view" id="view-calendar">
+            <div class="view-header">
+              <div>
+                <p class="eyebrow">PLANEJAMENTO</p>
+                <h1>Calendário</h1>
+                <p class="welcome-subtitle">Visualize seus compromissos e distribua melhor sua energia.</p>
+              </div>
+              <button class="primary-button" data-open-task-modal>
+                <span data-icon="plus"></span>
+                Agendar tarefa
+              </button>
+            </div>
+            <section class="full-calendar-card glass-card">
+              <div class="full-calendar-toolbar">
+                <button class="ghost-button" id="calendar-today-button">Hoje</button>
+                <div class="calendar-nav">
+                  <button class="icon-button" id="full-calendar-prev" aria-label="Mês anterior">
+                    <span data-icon="chevron-left"></span>
+                  </button>
+                  <button class="icon-button" id="full-calendar-next" aria-label="Próximo mês">
+                    <span data-icon="chevron-right"></span>
+                  </button>
+                </div>
+                <h2 id="full-calendar-title"></h2>
+                <button class="google-button" id="google-calendar-large">
+                  <span data-icon="calendar"></span>
+                  Fazer Download Calendário
+                </button>
+              </div>
+              <div class="full-calendar" id="full-calendar"></div>
+              <section class="calendar-day-panel" id="calendar-day-panel" aria-live="polite">
+                <div>
+                  <span class="section-kicker">DIA SELECIONADO</span>
+                  <h3 id="calendar-day-panel-title">Selecione um dia</h3>
+                  <p id="calendar-day-panel-copy">Escolha uma data no calendário para ver as tarefas.</p>
+                </div>
+                <div class="calendar-day-panel-actions">
+                  <button class="ghost-button" id="calendar-add-selected-task" type="button">
+                    <span data-icon="plus"></span>
+                    Adicionar tarefa
+                  </button>
+                  <button class="danger-button" id="calendar-clear-selected-day" type="button" hidden>
+                    Limpar dia do calendário
+                  </button>
+                </div>
+                <div class="calendar-day-task-list" id="calendar-day-task-list"></div>
+              </section>
+            </section>
+          </section>
+
+          <section class="view" id="view-focus">
+            <div class="focus-page">
+              <div class="focus-page-copy">
+                <p class="eyebrow">POMODORO</p>
+                <h1>Uma coisa de cada vez.</h1>
+                <p>Silencie o ruído, escolha sua prioridade e entre no ritmo.</p>
+                <select id="focus-task-select" aria-label="Tarefa da sessão"></select>
+              </div>
+              <section class="pomodoro-card glass-card">
+                <div class="pomodoro-tabs">
+                  <button class="active" data-mode="focus">Foco</button>
+                  <button data-mode="short">Pausa curta</button>
+                  <button data-mode="long">Pausa longa</button>
+                </div>
+                <div class="pomodoro-ring" id="pomodoro-ring">
+                  <div>
+                    <strong id="pomodoro-display">25:00</strong>
+                    <span id="pomodoro-status">PRONTO PARA COMEÇAR</span>
+                  </div>
+                </div>
+                <div class="pomodoro-controls">
+                  <button class="icon-button large" id="pomodoro-reset" aria-label="Reiniciar">
+                    <span data-icon="rotate"></span>
+                  </button>
+                  <button class="pomodoro-play" id="pomodoro-toggle">
+                    <span data-icon="play"></span>
+                    Iniciar
+                  </button>
+                  <button class="icon-button large" id="pomodoro-skip" aria-label="Finalizar Pomodoro" disabled>
+                    <span data-icon="check"></span>
+                  </button>
+                </div>
+                <p class="session-count"><span id="focus-sessions">0</span> sessões concluídas hoje</p>
+                <div class="pomodoro-history">
+                  <div class="pomodoro-history-heading">
+                    <strong>Histórico recente</strong>
+                    <span>Últimas sessões de foco</span>
+                  </div>
+                  <div class="pomodoro-history-list" id="pomodoro-history-list"></div>
+                </div>
+              </section>
+            </div>
+          </section>
+
+          <section class="view" id="view-plans">
+            <div class="view-header plans-header">
+              <div>
+                <p class="eyebrow">PLANOS</p>
+                <h1>Escolha como quer evoluir.</h1>
+                <p class="welcome-subtitle">Comece gratuitamente e desbloqueie mais poder quando precisar.</p>
+              </div>
+            </div>
+            <div class="plans-grid">
+              <article class="plan-card glass-card">
+                <span class="plan-label">ESSENCIAL</span>
+                <h2>Free</h2>
+                <p class="plan-price">R$ 0 <small>/ para sempre</small></p>
+                <ul>
+                  <li><span data-icon="check"></span> Tarefas ilimitadas</li>
+                  <li><span data-icon="check"></span> Pomodoro e gamificação</li>
+                  <li><span data-icon="check"></span> Assistente local</li>
+                </ul>
+                <button class="ghost-button full">Plano atual</button>
+              </article>
+              <article class="plan-card featured">
+                <span class="popular-label">MAIS ESCOLHIDO</span>
+                <span class="plan-label">PARA IR ALÉM</span>
+                <h2>Pro</h2>
+                <p class="plan-price">Em breve</p>
+                <ul>
+                  <li><span data-icon="check"></span> IA por voz sem limites</li>
+                  <li><span data-icon="check"></span> Google Calendar bidirecional</li>
+                  <li><span data-icon="check"></span> Relatórios de produtividade</li>
+                  <li><span data-icon="check"></span> Temas e patentes exclusivas</li>
+                </ul>
+                <button class="light-button full" data-waitlist>Entrar na lista</button>
+              </article>
+              <article class="plan-card glass-card">
+                <span class="plan-label">PARA EQUIPES</span>
+                <h2>Teams</h2>
+                <p class="plan-price">Sob consulta</p>
+                <ul>
+                  <li><span data-icon="check"></span> Espaços compartilhados</li>
+                  <li><span data-icon="check"></span> Metas e desafios da equipe</li>
+                  <li><span data-icon="check"></span> Administração centralizada</li>
+                </ul>
+                <button class="ghost-button full" data-waitlist>Tenho interesse</button>
+              </article>
+            </div>
+          </section>
+
+          <section class="view" id="view-profile">
+            <div class="profile-page">
+              <section class="profile-hero glass-card">
+                <div class="profile-banner" id="profile-banner">
+                  <button class="profile-edit-button" id="edit-banner-button" type="button">Alterar capa</button>
+                </div>
+                <div class="profile-identity">
+                  <div class="profile-photo-wrap">
+                    <div class="profile-photo" id="profile-photo">NB</div>
+                    <button class="profile-camera" id="edit-avatar-button" type="button" aria-label="Alterar foto de perfil">
+                      <span data-icon="settings"></span>
+                    </button>
+                  </div>
+                  <input id="avatar-file-input" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+                  <input id="banner-file-input" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+                  <div class="profile-main-copy">
+                    <div class="profile-name-row">
+                      <h1 id="profile-full-name">Nicolas Braga</h1>
+                      <button class="ghost-button profile-edit-info" id="edit-profile-button" type="button">Editar perfil</button>
+                    </div>
+                    <p id="profile-bio">Focado em evoluir 1% todos os dias.</p>
+                    <div class="profile-meta">
+                      <span id="profile-location">Brasil</span>
+                      <span>Entrou em <b id="profile-joined-date">jun. 2026</b></span>
+                    </div>
+                  </div>
+                  <button class="profile-rank-card" id="open-rank-roadmap" type="button">
+                    <img class="rank-gem" id="profile-rank-image" src="/assets/ranks/bronze.png?v=transparent" alt="Patente Bronze">
+                    <small id="profile-rank-name">Bronze</small>
+                    <strong id="profile-rank-level">Nível 1</strong>
+                    <span class="profile-rank-bar"><i id="profile-rank-fill"></i></span>
+                    <span id="profile-rank-xp">0 / 2.500 XP</span>
+                  </button>
+                </div>
+              </section>
+
+              <section class="profile-stats-grid" aria-label="Estatísticas do perfil">
+                <article class="profile-stat-card glass-card">
+                  <span class="profile-stat-icon" data-icon="calendar"></span>
+                  <h2>Hoje</h2>
+                  <div class="profile-stat-values">
+                    <div><small>Tarefas concluídas</small><strong id="profile-tasks-today">0</strong></div>
+                    <div><small>Horas focadas</small><strong id="profile-focus-today">0h</strong></div>
+                  </div>
+                </article>
+                <article class="profile-stat-card glass-card">
+                  <span class="profile-stat-icon purple" data-icon="calendar"></span>
+                  <h2>Esta semana</h2>
+                  <div class="profile-stat-values">
+                    <div><small>Tarefas concluídas</small><strong id="profile-tasks-week">0</strong></div>
+                    <div><small>Horas focadas</small><strong id="profile-focus-week">0h</strong></div>
+                  </div>
+                </article>
+                <article class="profile-stat-card glass-card">
+                  <span class="profile-stat-icon green" data-icon="calendar"></span>
+                  <h2>Este mês</h2>
+                  <div class="profile-stat-values">
+                    <div><small>Tarefas concluídas</small><strong id="profile-tasks-month">0</strong></div>
+                    <div><small>Horas focadas</small><strong id="profile-focus-month">0h</strong></div>
+                  </div>
+                </article>
+                <article class="profile-stat-card glass-card">
+                  <span class="profile-stat-icon orange" data-icon="timer"></span>
+                  <h2>Total geral</h2>
+                  <div class="profile-stat-values">
+                    <div><small>Tarefas concluídas</small><strong id="profile-tasks-total">0</strong></div>
+                    <div><small>Horas focadas</small><strong id="profile-focus-total">0h</strong></div>
+                  </div>
+                </article>
+              </section>
+            </div>
+          </section>
+        </div>
+      </main>
+
+      <nav class="mobile-nav" aria-label="Navegação mobile">
+        <button class="active" type="button" data-mobile-view="today">
+          <span data-icon="grid"></span>
+          <small>Meu dia</small>
+        </button>
+        <button type="button" data-mobile-view="calendar">
+          <span data-icon="calendar"></span>
+          <small>Calendário</small>
+        </button>
+        <button class="mobile-add-task" type="button" id="mobile-add-task" aria-label="Nova tarefa">
+          <span data-icon="plus"></span>
+        </button>
+        <button type="button" data-mobile-view="focus">
+          <span data-icon="timer"></span>
+          <small>Pomodoro</small>
+        </button>
+        <button type="button" data-mobile-menu>
+          <span data-icon="menu"></span>
+          <small>Menu</small>
+        </button>
+      </nav>
+     </div>
+
+    <dialog class="task-modal" id="task-modal">
+      <form method="dialog" id="task-form">
+        <div class="modal-header">
+          <div>
+            <span class="section-kicker">NOVA TAREFA</span>
+            <h2>O que precisa ser feito</h2>
+          </div>
+          <button type="button" class="icon-button" id="close-modal" aria-label="Fechar">
+            <span data-icon="x"></span>
+          </button>
+        </div>
+        <label>
+          Título
+          <input id="task-title" name="title" required maxlength="90" placeholder="Ex.: Revisar matéria de Cálculo" />
+        </label>
+        <div class="form-row">
+          <label>
+            Categoria
+            <select id="task-category" name="category">
+              <option value="Pessoais">Pessoais / Estudos</option>
+              <option>Faculdade</option>
+              <option>Trabalho</option>
+              <option>Treino</option>
+            </select>
+          </label>
+          <label>
+            Data
+            <input id="task-date" name="date" type="date" required />
+          </label>
+        </div>
+        <div class="form-row">
+          <label>
+            Horário
+            <input id="task-time" name="time" type="time" />
+          </label>
+          <label>
+            Prioridade
+            <select id="task-priority" name="priority">
+              <option value="medium">Média</option>
+              <option value="high">Alta</option>
+              <option value="low">Baixa</option>
+            </select>
+          </label>
+        </div>
+        <label>
+          Observações
+          <textarea id="task-notes" name="notes" rows="3" placeholder="Adicione contexto, links ou detalhes..."></textarea>
+        </label>
+        <div class="modal-actions">
+          <button type="button" class="ghost-button" id="cancel-modal">Cancelar</button>
+          <button type="submit" class="primary-button">Criar tarefa</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog class="task-modal preferences-modal" id="notification-modal">
+      <form method="dialog" id="notification-form">
+        <div class="modal-header">
+          <div>
+            <span class="section-kicker">RESUMO DIÁRIO</span>
+            <h2>Receba suas tarefas por e-mail</h2>
+          </div>
+          <button type="button" class="icon-button" id="close-notification-modal" aria-label="Fechar">
+            <span data-icon="x"></span>
+          </button>
+        </div>
+        <p class="modal-intro">O Paddocke envia todas as manhãs um resumo das tarefas pendentes do dia.</p>
+        <label class="toggle-row">
+          <span>
+            <strong>Ativar resumo diário</strong>
+            <small>Um e-mail por dia no horário escolhido</small>
+          </span>
+          <input id="email-enabled" name="enabled" type="checkbox" />
+        </label>
+        <div class="form-row">
+          <label>
+            E-mail
+            <input id="notification-email" name="email" type="email" placeholder="voce@exemplo.com" />
+          </label>
+          <label>
+            Horário
+            <input id="notification-time" name="time" type="time" value="07:00" />
+          </label>
+        </div>
+        <label class="toggle-row subtle-toggle">
+          <span>
+            <strong>Incluir tarefas concluídas</strong>
+            <small>Mostra também o que você já finalizou no resumo do dia</small>
+          </span>
+          <input id="email-include-completed" name="includeCompleted" type="checkbox" />
+        </label>
+        <p class="integration-note" id="email-integration-status">
+          O envio real requer a chave RESEND_API_KEY no servidor.
+        </p>
+        <div class="modal-actions">
+          <button type="button" class="ghost-button" id="test-notification-email">Enviar teste</button>
+          <button type="button" class="ghost-button" id="cancel-notification-modal">Cancelar</button>
+          <button type="submit" class="primary-button">Salvar notificações</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog class="task-modal rank-modal" id="rank-roadmap-modal">
+      <form method="dialog">
+        <div class="modal-header">
+          <div>
+            <span class="section-kicker">PATENTES</span>
+            <h2>Roadmap de evolução</h2>
+          </div>
+          <button type="button" class="icon-button" id="close-rank-roadmap" aria-label="Fechar">
+            <span data-icon="x"></span>
+          </button>
+        </div>
+        <p class="modal-intro">As patentes recompensam consistência, conclusão de tarefas e tempo real de foco.</p>
+        <div class="rank-roadmap-list" id="rank-roadmap-list"></div>
+      </form>
+    </dialog>
+
+    <dialog class="task-modal profile-edit-modal" id="profile-edit-modal">
+      <form method="dialog" id="profile-edit-form">
+        <div class="modal-header">
+          <div>
+            <span class="section-kicker">PERFIL</span>
+            <h2>Editar informações</h2>
+          </div>
+          <button type="button" class="icon-button" id="close-profile-edit-modal" aria-label="Fechar">
+            <span data-icon="x"></span>
+          </button>
+        </div>
+        <p class="modal-intro">Atualize como seu perfil aparece dentro do Paddocke.</p>
+        <label>
+          Nome do perfil
+          <input id="profile-display-name-input" name="displayName" type="text" maxlength="80" placeholder="Seu nome" />
+        </label>
+        <label>
+          Bio curta
+          <textarea id="profile-bio-input" name="bio" rows="3" maxlength="140" placeholder="Uma frase sobre sua jornada"></textarea>
+        </label>
+        <label>
+          País ou localização
+          <input id="profile-location-input" name="location" type="text" maxlength="80" placeholder="Brasil" />
+        </label>
+        <div class="modal-actions">
+          <button type="button" class="ghost-button" id="cancel-profile-edit-modal">Cancelar</button>
+          <button type="submit" class="primary-button">Salvar perfil</button>
+        </div>
+      </form>
+    </dialog>
+
+    <div class="floating-pomodoro is-hidden" id="floating-pomodoro" aria-live="polite">
+      <div class="floating-pomodoro-drag" id="floating-pomodoro-drag" aria-hidden="true">
+        <span data-icon="timer"></span>
+        <small id="floating-pomodoro-mode">Pomodoro</small>
+      </div>
+      <div class="floating-pomodoro-copy">
+        <strong id="floating-pomodoro-display">25:00</strong>
+        <span id="floating-pomodoro-status">Pronto para começar</span>
+      </div>
+      <div class="floating-pomodoro-actions">
+        <button class="icon-button small" id="floating-pomodoro-toggle" type="button" aria-label="Pausar Pomodoro">
+          <span data-icon="pause"></span>
+        </button>
+        <button class="icon-button small" id="floating-pomodoro-close" type="button" aria-label="Ocultar Pomodoro flutuante">
+          <span data-icon="x"></span>
+        </button>
+      </div>
+    </div>
+
+    <div class="toast-region" id="toast-region" aria-live="polite"></div>
+    <script src="/app.js"></script>
+  </body>
+</html>

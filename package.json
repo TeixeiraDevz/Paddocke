@@ -1,0 +1,16 @@
+{
+  "name": "paddocke",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Planejador de tarefas com foco, gamificacao e assistente inteligente.",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "stop": "node scripts/stop-port.js 3000",
+    "supabase:functions:list": "npx supabase functions list --project-ref egdltobtsldomxzlzhnt",
+    "supabase:functions:deploy:email": "npx supabase functions deploy daily-task-email --project-ref egdltobtsldomxzlzhnt --no-verify-jwt"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
