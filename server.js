@@ -311,9 +311,13 @@ async function checkDailyDigest() {
 
 async function handleApi(request, response, pathname) {
   if (request.method === "GET" && pathname === "/api/config") {
+    const productionUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
+      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+      : "";
     sendJson(response, 200, {
       aiConfigured: Boolean(process.env.OPENAI_API_KEY),
       emailConfigured: Boolean(process.env.RESEND_API_KEY),
+      appUrl: process.env.APP_URL || process.env.PUBLIC_APP_URL || productionUrl,
       supabaseUrl: process.env.SUPABASE_URL || "",
       supabaseAnonKey: process.env.SUPABASE_ANON_KEY || "",
       adminEmails: process.env.PADDOCKE_ADMIN_EMAILS || process.env.ADMIN_EMAILS || ""

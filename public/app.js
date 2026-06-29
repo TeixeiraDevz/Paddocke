@@ -520,6 +520,15 @@ async function getRuntimeConfig() {
   return runtimeConfig;
 }
 
+function getAppUrl() {
+  const configuredUrl = String(runtimeConfig.appUrl || "").trim().replace(/\/+$/, "");
+  return configuredUrl || window.location.origin;
+}
+
+function getAuthCallbackUrl() {
+  return `${getAppUrl()}/auth/callback`;
+}
+
 function getAdminEmails() {
   return String(runtimeConfig.adminEmails || "")
     .split(",")
@@ -793,7 +802,7 @@ async function submitAuth(event) {
           data: {
             full_name: `${firstName} ${lastName}`.trim()
           },
-          emailRedirectTo: window.location.origin
+          emailRedirectTo: getAuthCallbackUrl()
         }
       });
       if (error) throw error;
@@ -827,7 +836,7 @@ async function signInWithGoogle() {
   const { error } = await supabaseClient.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: `${window.location.origin}/auth/callback`,
+      redirectTo: getAuthCallbackUrl(),
       scopes: "email profile",
       queryParams: {
         access_type: "offline",
@@ -856,7 +865,7 @@ async function resetPassword() {
     return;
   }
   const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-    redirectTo: window.location.origin
+    redirectTo: getAuthCallbackUrl()
   });
   setAuthStatus(
     error ? error.message : "Enviamos o link de recuperação para seu e-mail.",
