@@ -1,8 +1,10 @@
 const http = require("node:http");
 const fs = require("node:fs");
+const os = require("node:os");
 const path = require("node:path");
 
 function loadLocalEnv() {
+  if (process.env.VERCEL) return;
   try {
     const envFile = fs.readFileSync(path.join(__dirname, ".env"), "utf8");
     envFile.split(/\r\n/).forEach((line) => {
@@ -19,7 +21,7 @@ loadLocalEnv();
 
 const PORT = Number(process.env.PORT) || 3000;
 const PUBLIC_DIR = path.join(__dirname, "public");
-const DATA_DIR = path.join(__dirname, "data");
+const DATA_DIR = process.env.VERCEL ? path.join(os.tmpdir(), "paddocke-data") : path.join(__dirname, "data");
 const PREFERENCES_FILE = path.join(DATA_DIR, "notification-preferences.json");
 
 const MIME_TYPES = {
@@ -313,7 +315,8 @@ async function handleApi(request, response, pathname) {
       aiConfigured: Boolean(process.env.OPENAI_API_KEY),
       emailConfigured: Boolean(process.env.RESEND_API_KEY),
       supabaseUrl: process.env.SUPABASE_URL || "",
-      supabaseAnonKey: process.env.SUPABASE_ANON_KEY || ""
+      supabaseAnonKey: process.env.SUPABASE_ANON_KEY || "",
+      adminEmails: process.env.PADDOCKE_ADMIN_EMAILS || process.env.ADMIN_EMAILS || ""
     });
     return true;
   }
@@ -445,6 +448,7 @@ const server = http.createServer(async (request, response) => {
   });
 });
 
+if (require.main === module) {
 server.on("error", (error) => {
   if (error.code === "EADDRINUSE") {
     console.error(`A porta ${PORT} já está em uso.`);
@@ -462,3 +466,13 @@ server.listen(PORT, () => {
 
 setInterval(checkDailyDigest, 30_000);
 checkDailyDigest();
+}
+
+function vercelHandler(request, response) {
+  server.emit("request", request, response);
+}
+
+vercelHandler.handleApi = handleApi;
+vercelHandler.server = server;
+
+module.exports = vercelHandler;

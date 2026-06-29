@@ -14,7 +14,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/styles.css" />
@@ -258,7 +258,6 @@
           <div class="avatar" id="profile-avatar">NB<span class="status-dot"></span></div>
           <div class="profile-copy">
             <strong id="profile-name">Nicolas</strong>
-            <span id="sidebar-rank">Explorador I</span>
           </div>
           <button class="icon-button" aria-label="Sair da conta" title="Sair da conta" data-action="logout">
             <span data-icon="log-out"></span>
@@ -291,7 +290,7 @@
               <span data-icon="bell"></span>
               <i></i>
             </button>
-            <button class="primary-button" id="add-task-button">
+            <button class="primary-button" id="add-task-button" aria-label="Nova tarefa" title="Nova tarefa">
               <span data-icon="plus"></span>
               Nova tarefa
             </button>
@@ -350,10 +349,6 @@
                   </div>
 
                   <div class="task-list" id="task-list"></div>
-                  <button class="add-inline-button" id="add-inline-button">
-                    <span data-icon="plus"></span>
-                    Adicionar uma tarefa
-                  </button>
                 </section>
               </div>
 

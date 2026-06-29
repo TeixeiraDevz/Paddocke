@@ -218,7 +218,6 @@ textarea:focus-visible {
 .primary-button span,
 .ghost-button span,
 .light-button span,
-.add-inline-button span,
 .search-icon,
 .google-button span:not(.google-g) {
   display: inline-grid;
@@ -1034,37 +1033,34 @@ textarea:focus-visible {
   color: var(--blue-bright);
 }
 
-.add-inline-button {
-  display: flex;
-  width: 100%;
-  min-height: 48px;
-  align-items: center;
-  gap: 10px;
-  margin-top: 9px;
-  padding: 0 16px;
-  border: 1px dashed rgba(111, 141, 179, 0.18);
-  border-radius: 13px;
-  color: #52657c;
-  background: transparent;
-  cursor: pointer;
-  font-size: 11px;
-  transition: 160ms ease;
-}
-
-.add-inline-button:hover {
-  border-color: rgba(77, 147, 242, 0.4);
-  color: #9db8d9;
-  background: rgba(24, 59, 103, 0.13);
-}
-
 .empty-state {
   display: grid;
+  width: 100%;
   min-height: 160px;
   place-content: center;
   border: 1px dashed var(--border);
   border-radius: 16px;
   color: #65778e;
+  background: transparent;
+  font: inherit;
   text-align: center;
+}
+
+.empty-state-action {
+  cursor: pointer;
+  transition: border-color 160ms ease, color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+.empty-state-action:hover,
+.empty-state-action:focus-visible {
+  border-color: rgba(77, 147, 242, 0.42);
+  color: #8ea8c8;
+  background: rgba(24, 59, 103, 0.12);
+}
+
+.empty-state-action:focus-visible {
+  outline: 2px solid rgba(47, 134, 255, 0.42);
+  outline-offset: 3px;
 }
 
 .empty-state strong {
@@ -1499,6 +1495,27 @@ textarea:focus-visible {
 .sidebar-assistant.floating-assistant.is-collapsed .assistant-companion svg {
   width: 18px;
   height: 18px;
+}
+
+.desktop-assistant-panel {
+  --assistant-panel-top: clamp(330px, 54vh, 468px);
+  position: fixed;
+  top: var(--assistant-panel-top);
+  left: 283px;
+  z-index: 82;
+  width: min(430px, calc(100vw - 318px));
+  max-height: calc(100vh - var(--assistant-panel-top) - 24px);
+  margin: 0;
+  overflow: auto;
+  border-radius: 22px;
+}
+
+.desktop-assistant-panel .assistant-message {
+  min-height: 64px;
+}
+
+.desktop-assistant-panel .assistant-input input {
+  min-width: 0;
 }
 
 .assistant-card::before {
@@ -2021,13 +2038,13 @@ button.ai-avatar {
 
 .pomodoro-tabs button {
   min-height: 34px;
-  padding: 0 14px;
+  padding: 0 16px;
   border: 0;
   border-radius: 9px;
   color: #60738a;
   background: transparent;
   cursor: pointer;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 600;
 }
 
@@ -2210,6 +2227,8 @@ button.ai-avatar {
     rgba(6, 18, 33, 0.94);
   box-shadow: 0 22px 70px rgba(0, 0, 0, 0.38), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
   backdrop-filter: blur(18px);
+  cursor: grab;
+  touch-action: none;
   transition: opacity 180ms ease, transform 180ms ease, border-color 180ms ease;
   user-select: none;
 }
@@ -2282,6 +2301,7 @@ button.ai-avatar {
 
 .floating-pomodoro-actions {
   display: flex;
+  cursor: default;
   gap: 7px;
 }
 
@@ -3014,17 +3034,6 @@ button.ai-avatar {
   color: #607792;
 }
 
-[data-theme="light"] .add-inline-button {
-  border-color: #bdcfe3;
-  color: #4c6784;
-}
-
-[data-theme="light"] .add-inline-button:hover {
-  border-color: #75a6dd;
-  color: #174f92;
-  background: #e9f3ff;
-}
-
 .modal-header {
   display: flex;
   align-items: flex-start;
@@ -3177,7 +3186,6 @@ button.ai-avatar {
 
 .task-meta,
 .filter-button,
-.add-inline-button,
 .calendar-weekday,
 .calendar-day,
 .calendar-tooltip strong,
@@ -3237,6 +3245,15 @@ button.ai-avatar {
 }
 
 @media (max-width: 920px) {
+  .desktop-assistant-panel {
+    position: relative;
+    top: auto;
+    left: auto;
+    z-index: auto;
+    width: 100%;
+    max-height: none;
+  }
+
   .sidebar {
     transform: translateX(-100%);
     transition: transform 220ms ease;
@@ -3328,7 +3345,6 @@ button.ai-avatar {
 
   .search-wrap kbd,
   .digital-clock,
-  .notification-button,
   .primary-button span + * {
     display: none;
   }
@@ -3337,10 +3353,18 @@ button.ai-avatar {
     gap: 5px;
   }
 
-  .top-actions .primary-button {
+  .top-actions #add-task-button {
     width: 39px;
+    min-width: 39px;
     min-height: 39px;
+    gap: 0;
     padding: 0;
+    font-size: 0;
+  }
+
+  .top-actions #add-task-button svg {
+    width: 18px;
+    height: 18px;
   }
 
   .page-container {
@@ -3657,14 +3681,10 @@ button.ai-avatar {
   color: #294967;
 }
 
-[data-theme="light"] .add-inline-button {
-  border-color: #bdcfe3;
-  color: #4c6784;
-}
-
-[data-theme="light"] .add-inline-button:hover {
+[data-theme="light"] .empty-state-action:hover,
+[data-theme="light"] .empty-state-action:focus-visible {
   border-color: #75a6dd;
-  color: #174f92;
+  color: #46617d;
   background: #e9f3ff;
 }
 
@@ -4837,21 +4857,31 @@ body.auth-visible {
     border-radius: 20px;
   }
 
-  .full-calendar {
-    min-width: 620px;
-  }
-
   .full-calendar-card {
-    overflow-x: auto;
+    overflow-x: hidden;
   }
 
   .calendar-day-panel {
-    min-width: 620px;
     grid-template-columns: 1fr;
   }
 
   .calendar-day-panel-actions {
     justify-content: flex-start;
+  }
+
+  .calendar-day-task-actions {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .calendar-day-task-actions label,
+  .calendar-day-task-actions input,
+  .calendar-day-task-actions .ghost-button,
+  .calendar-day-task-actions .danger-button {
+    width: 100%;
+    min-width: 0;
   }
 
   .focus-page {
@@ -4895,12 +4925,47 @@ body.auth-visible {
     width: 100%;
   }
 
+  .mobile-assistant-float {
+    position: fixed;
+    right: 14px;
+    bottom: 98px;
+    z-index: 82;
+    width: min(340px, calc(100vw - 28px));
+    max-height: calc(100dvh - 126px);
+    margin: 0;
+    overflow: auto;
+    border-radius: 20px;
+  }
+
+  .mobile-assistant-float.floating-assistant.is-collapsed {
+    display: grid;
+    width: 54px;
+    min-height: 54px;
+    padding: 5px;
+    place-items: center;
+    overflow: visible;
+    border-radius: 18px;
+  }
+
+  .mobile-assistant-float.floating-assistant.is-collapsed .assistant-heading {
+    display: grid;
+    width: 100%;
+    height: 100%;
+    place-items: center;
+  }
+
+  .mobile-assistant-float.floating-assistant.is-collapsed .assistant-heading > div,
+  .mobile-assistant-float.floating-assistant.is-collapsed .online-dot {
+    display: none;
+  }
+
   .floating-assistant.is-collapsed {
     width: 44px;
     min-height: 44px;
     border-radius: 15px;
   }
 
+  .mobile-assistant-float.floating-assistant.is-collapsed .assistant-companion,
   .floating-assistant.is-collapsed .assistant-companion {
     width: 44px;
     height: 44px;
@@ -4912,16 +4977,49 @@ body.auth-visible {
   }
 
   .floating-pomodoro {
-    right: 14px;
-    bottom: 88px;
-    width: calc(100vw - 28px);
-    grid-template-columns: auto minmax(0, 1fr);
-    border-radius: 28px;
+    right: auto;
+    bottom: 92px;
+    left: 12px;
+    width: min(246px, calc(100vw - 24px));
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 8px;
+    padding: 7px 8px;
+    border-radius: 20px;
+  }
+
+  .floating-pomodoro-drag {
+    width: 42px;
+    height: 42px;
+  }
+
+  .floating-pomodoro-drag svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .floating-pomodoro-drag small {
+    display: none;
+  }
+
+  .floating-pomodoro-copy strong {
+    font-size: 24px;
+    letter-spacing: -0.4px;
+  }
+
+  .floating-pomodoro-copy span {
+    margin-top: 0;
+    font-size: 10px;
   }
 
   .floating-pomodoro-actions {
-    grid-column: 1 / -1;
+    grid-column: auto;
+    gap: 4px;
     justify-content: flex-end;
+  }
+
+  .floating-pomodoro-actions .icon-button {
+    width: 30px;
+    height: 30px;
   }
 
   .rank-roadmap-item {

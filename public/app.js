@@ -108,14 +108,14 @@ function addDays(date, amount) {
   return result;
 }
 
-function createInitialState() {
+function createInitialState(options = {}) {
   const today = new Date();
   const todayKey = localDateKey(today);
   const tomorrowKey = localDateKey(addDays(today, 1));
   const laterKey = localDateKey(addDays(today, 3));
 
   return {
-    tasks: [
+    tasks: options.demo ? [
       {
         id: crypto.randomUUID(),
         title: "Revisar anotações de Cálculo",
@@ -176,8 +176,8 @@ function createInitialState() {
         completedAt: null,
         xpAwardedAt: null
       }
-    ],
-    xp: ADMIN_BASE_XP,
+    ] : [],
+    xp: options.admin ? ADMIN_BASE_XP : 0,
     focusSessions: 0,
     focusHistory: [],
     focusSessionDetails: [],
@@ -238,7 +238,7 @@ function normalizeState(stored = {}) {
     completedAt: task.completedAt || null,
     xpAwardedAt: task.xpAwardedAt || null
   }));
-  normalized.xp = Math.max(ADMIN_BASE_XP, Number(normalized.xp || 0));
+  normalized.xp = Math.max(0, Number(normalized.xp || 0));
 
   Object.keys(normalized.xpLedger).forEach((key) => {
     if (!Array.isArray(normalized.xpLedger[key])) normalized.xpLedger[key] = [];
@@ -268,6 +268,11 @@ let floatingPomodoroDismissed = false;
 let floatingPomodoroDrag = null;
 let pomodoroHistoryExpanded = false;
 let editingTaskId = null;
+let assistantOriginalParent = null;
+let assistantAnchor = null;
+let assistantRecognition = null;
+let assistantRecognitionStopExpected = false;
+let assistantVoiceCooldownUntil = 0;
 
 const pomodoro = {
   mode: "focus",
@@ -321,6 +326,7 @@ function rowToTask(row) {
 }
 
 function getProfilePayload(user = currentUser) {
+  applyAdminEntitlement(user);
   const profile = getUserProfile(user);
   const syncedAvatar = profile.avatar?.startsWith("data:") ? null : profile.avatar;
   return {
@@ -337,7 +343,9 @@ function getProfilePayload(user = currentUser) {
 
 function applyRemoteProfile(profile) {
   if (!profile) return;
-  state.xp = Math.max(ADMIN_BASE_XP, Number(profile.xp ?? state.xp));
+  state.xp = Math.max(0, Number(profile.xp ?? state.xp));
+  if (!isAdminUser() && state.xp >= ADMIN_BASE_XP) state.xp = 0;
+  applyAdminEntitlement();
   state.focusSessions = Number(profile.focus_sessions ?? state.focusSessions);
   state.streakRecord = Number(profile.streak_record ?? state.streakRecord);
   if (profile.theme) state.theme = profile.theme;
@@ -454,13 +462,10 @@ async function loadRemoteWorkspace(user) {
       .order("due_time", { ascending: true });
     if (tasksError) throw tasksError;
 
-    const migrationKey = `paddocke-remote-migrated-${user.id}`;
     if (remoteTasks.length) {
       state.tasks = remoteTasks.map(rowToTask);
-    } else if (!localStorage.getItem(migrationKey) && state.tasks.length) {
-      const { error } = await supabaseClient.from("tasks").insert(state.tasks.map(taskToRow));
-      if (error) throw error;
-      localStorage.setItem(migrationKey, "true");
+    } else {
+      state.tasks = [];
     }
 
     const { data: preferences, error: preferencesError } = await supabaseClient
@@ -513,6 +518,21 @@ async function getRuntimeConfig() {
     runtimeConfig = {};
   }
   return runtimeConfig;
+}
+
+function getAdminEmails() {
+  return String(runtimeConfig.adminEmails || "")
+    .split(",")
+    .map((email) => normalizeAuthEmail(email))
+    .filter(Boolean);
+}
+
+function isAdminUser(user = currentUser) {
+  return Boolean(user?.email && getAdminEmails().includes(normalizeAuthEmail(user.email)));
+}
+
+function applyAdminEntitlement(user = currentUser) {
+  if (isAdminUser(user) && state.xp < ADMIN_BASE_XP) state.xp = ADMIN_BASE_XP;
 }
 
 function setAuthStatus(message = "", type = "") {
@@ -688,6 +708,11 @@ function showAuthScreen(message = "") {
 
 function enterApp(user = null) {
   currentUser = user;
+  if (user) {
+    sessionStorage.removeItem("paddocke-demo-session");
+    if (!isAdminUser(user) && state.xp >= ADMIN_BASE_XP) state.xp = 0;
+  }
+  applyAdminEntitlement(user);
   document.querySelector("#auth-shell").hidden = true;
   document.querySelector("#app-shell").hidden = false;
   document.body.classList.remove("auth-visible");
@@ -761,7 +786,7 @@ async function submitAuth(event) {
       if (data.session) {
         enterApp(data.user);
       } else {
-        setAuthStatus(`Cadastro criado para ${email}. Confirme esse e-mail para entrar.`, "success");
+        setAuthStatus(`Cadastro criado para ${email}. Confira a caixa de entrada e o spam para confirmar o e-mail.`, "success");
       }
     } else {
       setAuthLoading(true);
@@ -853,6 +878,8 @@ function bindAuthEvents() {
   });
   document.querySelector("#demo-access-button").addEventListener("click", () => {
     sessionStorage.setItem("paddocke-demo-session", "true");
+    state = normalizeState(createInitialState({ demo: true, admin: true }));
+    saveState({ syncNotifications: false, syncRemote: false });
     enterApp();
   });
   document.querySelector("#password-toggle").addEventListener("click", (event) => {
@@ -980,7 +1007,8 @@ function recordXpLedger(key, timestamp = new Date().toISOString()) {
 }
 
 function addXp(amount) {
-  state.xp = Math.max(ADMIN_BASE_XP, Number(state.xp || 0)) + amount;
+  applyAdminEntitlement();
+  state.xp = Math.max(0, Number(state.xp || 0)) + amount;
 }
 
 function getActivityDays() {
@@ -1049,7 +1077,12 @@ function renderTasks() {
       completed: ["Nenhuma conclusão ainda", "Conclua uma tarefa e ela aparecerá aqui."]
     };
     const [title, copy] = messages[activeFilter];
-    container.innerHTML = `<div class="empty-state"><strong>${title}</strong><span>${copy}</span></div>`;
+    container.innerHTML = `
+      <button class="empty-state empty-state-action" type="button" data-action="open-task-modal">
+        <strong>${title}</strong>
+        <span>${copy}</span>
+      </button>
+    `;
     return;
   }
 
@@ -1122,7 +1155,6 @@ function renderGamification() {
   const progressCard = document.querySelector(".progress-card");
   const progressRankImage = document.querySelector("#progress-rank-image");
   document.querySelector("#rank-name").textContent = rank;
-  document.querySelector("#sidebar-rank").textContent = rank;
   document.querySelector("#level-pill").textContent = `NÍVEL ${level}`;
   document.querySelector("#xp-label").textContent = xpLabel;
   document.querySelector("#xp-next").textContent = next ? "Próxima patente" : "Patente máxima";
@@ -1224,7 +1256,7 @@ function renderProfile() {
   document.querySelector("#profile-location").textContent = state.profile.location || "Brasil";
   document.querySelector("#profile-joined-date").textContent = joinedLabel;
   document.querySelector("#profile-rank-name").textContent = game.rank;
-  document.querySelector("#profile-rank-level").textContent = game.next ? `Nível ${game.level}` : `Nível ${game.level} - Dono`;
+  document.querySelector("#profile-rank-level").textContent = `Nível ${game.level}`;
   document.querySelector("#profile-rank-xp").textContent = game.xpLabel;
   document.querySelector("#profile-rank-fill").style.width = `${game.levelXp}%`;
   rankCard.style.setProperty("--rank-color", game.current.color);
@@ -1698,7 +1730,7 @@ function selectTaskForFocus(taskId) {
   }
   showView("focus");
   document.querySelector("#focus-task-select").value = taskId;
-  if (!pomodoro.running) startPomodoro();
+  showToast("Tarefa selecionada no Pomodoro. Aperte Iniciar quando estiver pronto.");
 }
 
 function showView(viewName) {
@@ -1713,6 +1745,7 @@ function showView(viewName) {
   document.querySelector("#sidebar").classList.remove("open");
   if (viewName === "calendar") renderFullCalendar();
   if (viewName === "profile") renderProfile();
+  updateFloatingPomodoro();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -1939,7 +1972,12 @@ function restoreFloatingPomodoroPosition() {
 function updateFloatingPomodoro() {
   const widget = document.querySelector("#floating-pomodoro");
   if (!widget) return;
-  const shouldShow = (pomodoro.running || pomodoro.remaining < pomodoro.durations[pomodoro.mode]) && !floatingPomodoroDismissed;
+  const activeView = document.querySelector(".view.active")?.id || "";
+  const isMobilePomodoroView = window.matchMedia("(max-width: 650px)").matches && activeView === "view-focus";
+  const shouldShow =
+    (pomodoro.running || pomodoro.remaining < pomodoro.durations[pomodoro.mode]) &&
+    !floatingPomodoroDismissed &&
+    !isMobilePomodoroView;
   const { display, label, modeLabel } = getPomodoroDisplayData();
 
   document.querySelector("#floating-pomodoro-display").textContent = display;
@@ -2468,10 +2506,69 @@ function submitAssistantCommand(event) {
   processAssistantCommand(command);
 }
 
+function syncAssistantPlacement({ preserveState = true } = {}) {
+  const card = document.querySelector("#assistant-card");
+  if (!card) return;
+
+  if (!assistantOriginalParent) {
+    assistantOriginalParent = card.parentElement;
+    assistantAnchor = document.createComment("assistant-card-anchor");
+    card.before(assistantAnchor);
+  }
+
+  const isMobile = window.matchMedia("(max-width: 650px)").matches;
+  const isOpen = !card.classList.contains("is-collapsed");
+  const shouldFloat = isMobile || isOpen;
+  card.classList.toggle("mobile-assistant-float", isMobile);
+  card.classList.toggle("desktop-assistant-panel", !isMobile && isOpen);
+
+  if (shouldFloat && card.parentElement !== document.body) {
+    document.body.append(card);
+    if (!preserveState) setAssistantCollapsed(true);
+    return;
+  }
+
+  if (!shouldFloat && card.parentElement === document.body && assistantAnchor?.parentNode) {
+    assistantAnchor.parentNode.insertBefore(card, assistantAnchor.nextSibling);
+    if (!preserveState) setAssistantCollapsed(true);
+  }
+}
+
+function setVoiceButtonListening(listening) {
+  const button = document.querySelector("#voice-button");
+  if (!button) return;
+  const helper = button.querySelector(".voice-button-copy small");
+  button.classList.toggle("listening", listening);
+  button.setAttribute("aria-label", listening ? "Parar escuta do assistente" : "Falar com o assistente");
+  if (helper) helper.textContent = listening ? "Toque para parar de ouvir" : "Toque e diga seu comando";
+}
+
+function stopAssistantRecognition(clearStatus = false) {
+  if (assistantRecognition) {
+    assistantRecognitionStopExpected = true;
+    try {
+      assistantRecognition.abort();
+    } catch {
+      assistantRecognitionStopExpected = false;
+    }
+    assistantRecognition = null;
+  }
+  setVoiceButtonListening(false);
+  if (clearStatus) document.querySelector("#voice-status").textContent = "";
+}
+
+function closeAssistantOnOutsidePointer(event) {
+  const card = document.querySelector("#assistant-card");
+  if (!card || card.classList.contains("is-collapsed")) return;
+  if (card.contains(event.target)) return;
+  setAssistantCollapsed(true, { clearVoiceStatus: true });
+}
+
 function setAssistantCollapsed(collapsed, options = {}) {
   const card = document.querySelector("#assistant-card");
   const toggle = document.querySelector("#assistant-float-toggle");
   if (!card || !toggle) return;
+  if (collapsed) stopAssistantRecognition(Boolean(options.clearVoiceStatus));
   card.classList.toggle("is-collapsed", collapsed);
   card.classList.toggle("is-awake", !collapsed);
   toggle.classList.toggle("is-awake", !collapsed);
@@ -2480,6 +2577,7 @@ function setAssistantCollapsed(collapsed, options = {}) {
     "aria-label",
     collapsed ? "Abrir assistente de voz Paddocke" : "Recolher assistente Paddocke"
   );
+  syncAssistantPlacement();
   if (!collapsed) {
     window.requestAnimationFrame(() => document.querySelector("#assistant-command-input")?.focus());
     if (options.startVoice) startVoiceRecognition();
@@ -2503,8 +2601,19 @@ function speak(text) {
 
 function startVoiceRecognition() {
   const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  const button = document.querySelector("#voice-button");
   const status = document.querySelector("#voice-status");
+
+  if (assistantRecognition) {
+    stopAssistantRecognition(true);
+    assistantVoiceCooldownUntil = Date.now() + 500;
+    status.textContent = "Escuta interrompida.";
+    window.setTimeout(() => {
+      if (!assistantRecognition && status.textContent === "Escuta interrompida.") status.textContent = "";
+    }, 1200);
+    return;
+  }
+
+  if (Date.now() < assistantVoiceCooldownUntil) return;
 
   if (!Recognition) {
     status.textContent = "Reconhecimento de voz não disponível neste navegador.";
@@ -2513,12 +2622,21 @@ function startVoiceRecognition() {
   }
 
   const recognition = new Recognition();
+  assistantRecognition = recognition;
+  assistantRecognitionStopExpected = false;
   recognition.lang = "pt-BR";
   recognition.interimResults = false;
   recognition.continuous = false;
-  button.classList.add("listening");
+  setVoiceButtonListening(true);
   status.textContent = "Ouvindo... diga seu comando.";
-  recognition.start();
+  try {
+    recognition.start();
+  } catch {
+    assistantRecognition = null;
+    setVoiceButtonListening(false);
+    status.textContent = "Não consegui iniciar a escuta. Tente novamente.";
+    return;
+  }
 
   recognition.onresult = (event) => {
     const transcript = event.results[0][0].transcript;
@@ -2527,11 +2645,17 @@ function startVoiceRecognition() {
   };
 
   recognition.onerror = () => {
+    if (assistantRecognitionStopExpected) {
+      status.textContent = "";
+      return;
+    }
     status.textContent = "Não consegui ouvir. Tente novamente.";
   };
 
   recognition.onend = () => {
-    button.classList.remove("listening");
+    setVoiceButtonListening(false);
+    if (assistantRecognition === recognition) assistantRecognition = null;
+    assistantRecognitionStopExpected = false;
   };
 }
 
@@ -2725,7 +2849,6 @@ function bindEvents() {
   });
 
   document.querySelector("#add-task-button").addEventListener("click", () => openTaskModal());
-  document.querySelector("#add-inline-button").addEventListener("click", () => openTaskModal());
   document.querySelectorAll("[data-open-task-modal]").forEach((button) => {
     button.addEventListener("click", () => openTaskModal());
   });
@@ -2743,6 +2866,10 @@ function bindEvents() {
 
   document.querySelector("#task-list").addEventListener("click", (event) => {
     const actionButton = event.target.closest("[data-action]");
+    if (actionButton?.dataset.action === "open-task-modal") {
+      openTaskModal();
+      return;
+    }
     const taskItem = event.target.closest("[data-task-id]");
     if (!actionButton || !taskItem) return;
     const { taskId } = taskItem.dataset;
@@ -2781,7 +2908,6 @@ function bindEvents() {
   document.querySelector("#open-calendar-button").addEventListener("click", () => showView("calendar"));
   document.querySelector("#hero-focus-button").addEventListener("click", () => {
     showView("focus");
-    startPomodoro();
   });
 
   document.querySelectorAll(".pomodoro-tabs button").forEach((button) => {
@@ -2800,6 +2926,14 @@ function bindEvents() {
     floatingPomodoroDismissed = true;
     updateFloatingPomodoro();
   });
+  document.querySelector("#floating-pomodoro").addEventListener("pointerdown", beginFloatingPomodoroDrag);
+  document.querySelector("#floating-pomodoro").addEventListener("pointermove", moveFloatingPomodoro);
+  document.querySelector("#floating-pomodoro").addEventListener("pointerup", endFloatingPomodoroDrag);
+  document.querySelector("#floating-pomodoro").addEventListener("pointercancel", endFloatingPomodoroDrag);
+  window.addEventListener("resize", () => {
+    syncAssistantPlacement();
+    updateFloatingPomodoro();
+  });
 
   document.querySelector("#voice-button").addEventListener("click", startVoiceRecognition);
   document.querySelector("#assistant-command-form").addEventListener("submit", submitAssistantCommand);
@@ -2811,6 +2945,7 @@ function bindEvents() {
     if (!event.currentTarget.classList.contains("is-collapsed")) return;
     setAssistantCollapsed(false, { startVoice: true });
   });
+  document.addEventListener("pointerdown", closeAssistantOnOutsidePointer);
   document.querySelector("#theme-toggle").addEventListener("click", () => {
     applyTheme(state.theme === "dark" ? "light" : "dark");
     saveState();
@@ -2871,9 +3006,11 @@ function initializeApp() {
   document.querySelector("#task-date").min = localDateKey();
   updateClock();
   window.setInterval(updateClock, 1000);
+  syncAssistantPlacement({ preserveState: false });
   bindEvents();
   renderAll();
   updatePomodoroDisplay();
+  restoreFloatingPomodoroPosition();
   updateNotificationIndicator();
   initializeIntegrations();
 }

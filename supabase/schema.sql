@@ -38,9 +38,13 @@ create table if not exists public.notification_preferences (
   email text not null default '',
   delivery_time time not null default '07:00',
   timezone text not null default 'America/Manaus',
+  include_completed boolean not null default false,
   last_sent_date date,
   updated_at timestamptz not null default now()
 );
+
+alter table public.notification_preferences
+  add column if not exists include_completed boolean not null default false;
 
 create or replace function public.handle_new_user()
 returns trigger

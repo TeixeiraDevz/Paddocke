@@ -11,6 +11,6 @@
     "supabase:functions:deploy:email": "npx supabase functions deploy daily-task-email --project-ref egdltobtsldomxzlzhnt --no-verify-jwt"
   },
   "engines": {
-    "node": ">=20"
+    "node": "24.x"
   }
 }
