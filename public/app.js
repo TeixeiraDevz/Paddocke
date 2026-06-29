@@ -604,6 +604,20 @@ function getFriendlyAuthError(error) {
   return message;
 }
 
+function getSignUpStatus(data, email) {
+  const identities = data?.user?.identities;
+  if (Array.isArray(identities) && identities.length === 0) {
+    return {
+      message: "Esse e-mail já parece ter uma conta. Use Entrar com sua senha ou recupere o acesso em Esqueceu a senha.",
+      type: "error"
+    };
+  }
+  return {
+    message: `Cadastro criado para ${email}. Confira a caixa de entrada e o spam para confirmar o e-mail. Se já tinha conta, toque em Faça login.`,
+    type: "success"
+  };
+}
+
 function setAuthLoading(loading) {
   const submit = document.querySelector("#auth-submit");
   const google = document.querySelector("#google-auth-button");
@@ -786,7 +800,8 @@ async function submitAuth(event) {
       if (data.session) {
         enterApp(data.user);
       } else {
-        setAuthStatus(`Cadastro criado para ${email}. Confira a caixa de entrada e o spam para confirmar o e-mail.`, "success");
+        const status = getSignUpStatus(data, email);
+        setAuthStatus(status.message, status.type);
       }
     } else {
       setAuthLoading(true);
