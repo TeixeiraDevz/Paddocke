@@ -264,6 +264,7 @@ let remoteUserLoadedId = "";
 let remoteSyncTimer = null;
 let remoteSyncing = false;
 let remoteSyncQueued = false;
+let localMutationVersion = 0;
 let pendingSignupCredentials = null;
 let pendingSignupTimer = null;
 let pendingSignupDeadline = 0;
@@ -288,6 +289,7 @@ const pomodoro = {
 };
 
 function saveState(options = {}) {
+  localMutationVersion += 1;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   if (options.syncNotifications !== false) syncNotificationData();
   if (options.syncRemote !== false) scheduleRemoteSync(options.remoteDelay);
@@ -326,6 +328,18 @@ function rowToTask(row) {
     completedAt: row.completed_at || null,
     xpAwardedAt: row.completed_at || null
   };
+}
+
+function mergeTasksById(primaryTasks = [], secondaryTasks = []) {
+  const merged = [...primaryTasks];
+  const ids = new Set(merged.map((task) => task.id));
+  secondaryTasks.forEach((task) => {
+    if (!ids.has(task.id)) {
+      merged.push(task);
+      ids.add(task.id);
+    }
+  });
+  return merged;
 }
 
 function getProfilePayload(user = currentUser) {
@@ -401,17 +415,20 @@ async function syncRemoteTasks() {
 async function syncRemoteNotificationPreferences() {
   if (!hasRemoteWorkspace()) return null;
   const preferences = state.notifications || {};
-  const { error } = await supabaseClient.from("notification_preferences").upsert(
-    {
-      user_id: currentUser.id,
-      enabled: Boolean(preferences.enabled),
-      email: preferences.email || "",
-      delivery_time: preferences.time || "07:00",
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      updated_at: new Date().toISOString()
-    },
-    { onConflict: "user_id" }
-  );
+  const payload = {
+    user_id: currentUser.id,
+    enabled: Boolean(preferences.enabled),
+    email: preferences.email || "",
+    delivery_time: preferences.time || "07:00",
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    include_completed: Boolean(preferences.includeCompleted),
+    updated_at: new Date().toISOString()
+  };
+  let { error } = await supabaseClient.from("notification_preferences").upsert(payload, { onConflict: "user_id" });
+  if (error && String(error.message || "").includes("include_completed")) {
+    delete payload.include_completed;
+    ({ error } = await supabaseClient.from("notification_preferences").upsert(payload, { onConflict: "user_id" }));
+  }
   if (error) throw error;
   return { saved: true };
 }
@@ -441,6 +458,7 @@ async function loadRemoteWorkspace(user) {
   if (!supabaseClient || !user || remoteUserLoadedId === user.id) return;
   currentUser = user;
   remoteUserLoadedId = user.id;
+  const versionAtLoadStart = localMutationVersion;
 
   try {
     const { data: profile, error: profileError } = await supabaseClient
@@ -465,10 +483,12 @@ async function loadRemoteWorkspace(user) {
       .order("due_time", { ascending: true });
     if (tasksError) throw tasksError;
 
+    const changedDuringLoad = localMutationVersion !== versionAtLoadStart;
+    const localTasksCreatedDuringLoad = changedDuringLoad ? state.tasks : [];
     if (remoteTasks.length) {
-      state.tasks = remoteTasks.map(rowToTask);
+      state.tasks = mergeTasksById(remoteTasks.map(rowToTask), localTasksCreatedDuringLoad);
     } else {
-      state.tasks = [];
+      state.tasks = changedDuringLoad ? localTasksCreatedDuringLoad : [];
     }
 
     const { data: preferences, error: preferencesError } = await supabaseClient
@@ -483,6 +503,7 @@ async function loadRemoteWorkspace(user) {
     renderAll();
     updatePomodoroDisplay();
     updateNotificationIndicator();
+    if (changedDuringLoad) scheduleRemoteSync(0);
     showToast("Dados da sua conta sincronizados.", "success");
   } catch (error) {
     console.warn("Falha ao carregar dados do Supabase:", error.message);
@@ -1852,6 +1873,13 @@ async function syncNotificationData() {
     time: "07:00",
     includeCompleted: false
   };
+  let remoteSaved = false;
+  try {
+    await syncRemoteNotificationPreferences();
+    remoteSaved = true;
+  } catch (error) {
+    console.warn("Falha ao salvar notificações no Supabase:", error.message);
+  }
   try {
     const response = await fetch("/api/notifications/preferences", {
       method: "POST",
@@ -1864,15 +1892,10 @@ async function syncNotificationData() {
     });
     const result = await response.json();
     if (!response.ok || !result.saved) throw new Error(result.error || "Falha ao salvar notificações");
-    try {
-      await syncRemoteNotificationPreferences();
-    } catch (error) {
-      console.warn("Falha ao salvar notificações no Supabase:", error.message);
-    }
-    return result;
+    return { ...result, remoteSaved, emailSchedulerSaved: true };
   } catch {
-    // The local state remains authoritative when the notification service is offline.
-    return null;
+    // Preferências por usuário continuam salvas no Supabase mesmo se o agendador de e-mail oscilar.
+    return remoteSaved ? { saved: true, remoteSaved, emailSchedulerSaved: false } : null;
   }
 }
 
@@ -1925,6 +1948,10 @@ async function saveNotificationPreferences(event) {
 
   updateNotificationIndicator();
   closeNotificationModal();
+  if (result.emailSchedulerSaved === false) {
+    showToast("Preferência salva na sua conta. O agendador de e-mail não confirmou agora.");
+    return;
+  }
   showToast(
     enabled
       ? `Resumo diário ativado para ${email}, às ${time}.`
