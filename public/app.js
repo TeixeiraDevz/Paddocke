@@ -264,6 +264,9 @@ let remoteUserLoadedId = "";
 let remoteSyncTimer = null;
 let remoteSyncing = false;
 let remoteSyncQueued = false;
+let pendingSignupCredentials = null;
+let pendingSignupTimer = null;
+let pendingSignupDeadline = 0;
 let floatingPomodoroDismissed = false;
 let floatingPomodoroDrag = null;
 let pomodoroHistoryExpanded = false;
@@ -556,6 +559,11 @@ function setGoogleAuthHelp(visible = false) {
   if (help) help.hidden = !visible;
 }
 
+function setSignupConfirmationVisible(visible = false) {
+  const confirmation = document.querySelector("#auth-confirmation");
+  if (confirmation) confirmation.hidden = !visible;
+}
+
 function getAuthRedirectError() {
   const sources = [window.location.search, window.location.hash.replace(/^#/, "")];
   for (const source of sources) {
@@ -608,7 +616,7 @@ function getFriendlyAuthError(error) {
     return "Confirme seu e-mail antes de entrar. Confira sua caixa de entrada e spam.";
   }
   if (lower.includes("invalid login credentials")) {
-    return "E-mail ou senha incorretos. Confira os dados e tente novamente.";
+    return "E-mail ou senha incorretos. Confira os dados ou use Esqueceu a senha para recuperar o acesso.";
   }
   return message;
 }
@@ -625,6 +633,58 @@ function getSignUpStatus(data, email) {
     message: `Cadastro criado para ${email}. Confira a caixa de entrada e o spam para confirmar o e-mail. Se já tinha conta, toque em Faça login.`,
     type: "success"
   };
+}
+
+function clearPendingSignup() {
+  pendingSignupCredentials = null;
+  pendingSignupDeadline = 0;
+  if (pendingSignupTimer) window.clearInterval(pendingSignupTimer);
+  pendingSignupTimer = null;
+  setSignupConfirmationVisible(false);
+}
+
+async function tryPendingSignupLogin({ manual = false } = {}) {
+  if (!supabaseClient || !pendingSignupCredentials) return false;
+  const { email, password } = pendingSignupCredentials;
+  const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  if (!error && data.user) {
+    clearPendingSignup();
+    enterApp(data.user);
+    return true;
+  }
+
+  const message = getFriendlyAuthError(error || "");
+  if (message.includes("Confirme seu e-mail")) {
+    if (manual) setAuthStatus("Ainda não localizei a confirmação. Confira o e-mail e tente de novo.", "error");
+    return false;
+  }
+
+  if (manual || Date.now() > pendingSignupDeadline) {
+    clearPendingSignup();
+    setAuthView("login");
+    document.querySelector("#auth-email").value = email;
+    setAuthStatus(`${message} Se você acabou de criar a conta, use Esqueceu a senha para definir uma nova senha.`, "error");
+  }
+  return false;
+}
+
+function startPendingSignupLogin(email, password) {
+  clearPendingSignup();
+  pendingSignupCredentials = { email, password };
+  pendingSignupDeadline = Date.now() + 3 * 60 * 1000;
+  setSignupConfirmationVisible(true);
+  setAuthStatus("Cadastro criado. Confirme o e-mail; esta tela vai entrar automaticamente quando a confirmação liberar o acesso.", "success");
+  pendingSignupTimer = window.setInterval(async () => {
+    if (!pendingSignupCredentials) return;
+    if (Date.now() > pendingSignupDeadline) {
+      clearPendingSignup();
+      setAuthView("login");
+      document.querySelector("#auth-email").value = email;
+      setAuthStatus("Tempo de confirmação encerrado. Se já confirmou, entre com seu e-mail e senha.", "success");
+      return;
+    }
+    await tryPendingSignupLogin();
+  }, 5000);
 }
 
 function setAuthLoading(loading) {
@@ -687,6 +747,7 @@ function setAuthView(mode) {
     button.setAttribute("aria-selected", String(active));
   });
   setGoogleAuthHelp(false);
+  if (mode !== "signup") clearPendingSignup();
   setAuthStatus();
   setAuthLoading(false);
 }
@@ -732,6 +793,7 @@ function showAuthScreen(message = "") {
 function enterApp(user = null) {
   currentUser = user;
   if (user) {
+    clearPendingSignup();
     sessionStorage.removeItem("paddocke-demo-session");
     if (!isAdminUser(user) && state.xp >= ADMIN_BASE_XP) state.xp = 0;
   }
@@ -811,6 +873,7 @@ async function submitAuth(event) {
       } else {
         const status = getSignUpStatus(data, email);
         setAuthStatus(status.message, status.type);
+        if (status.type === "success") startPendingSignupLogin(email, password);
       }
     } else {
       setAuthLoading(true);
@@ -894,6 +957,15 @@ function bindAuthEvents() {
   document.querySelector("#use-email-auth").addEventListener("click", () => {
     setAuthView("login");
     setAuthStatus("Entre com e-mail e senha enquanto ajustamos o Google.", "success");
+  });
+  document.querySelector("#retry-confirmed-login").addEventListener("click", () => {
+    tryPendingSignupLogin({ manual: true });
+  });
+  document.querySelector("#change-confirmation-email").addEventListener("click", () => {
+    clearPendingSignup();
+    setAuthView("signup");
+    setAuthStatus("Atualize o e-mail e crie a conta novamente.", "success");
+    document.querySelector("#auth-email").focus();
   });
   document.querySelector("#forgot-password-button").addEventListener("click", resetPassword);
   document.querySelector("#auth-theme-toggle").addEventListener("click", () => {

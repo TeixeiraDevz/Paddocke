@@ -120,12 +120,20 @@
 
             <button class="auth-submit" id="auth-submit" type="submit">Entrar</button>
             <p class="auth-status" id="auth-status" aria-live="polite"></p>
+            <div class="auth-confirmation" id="auth-confirmation" hidden>
+              <strong>Confirme seu e-mail</strong>
+              <p>Depois de confirmar no celular ou desktop, esta tela vai tentar entrar automaticamente por alguns minutos.</p>
+              <div class="auth-help-actions">
+                <button class="auth-link" id="retry-confirmed-login" type="button">Já confirmei, entrar agora</button>
+                <button class="auth-link" id="change-confirmation-email" type="button">Trocar e-mail</button>
+              </div>
+            </div>
             <div class="auth-help" id="google-auth-help" hidden>
               <strong>Google Auth precisa de ajuste</strong>
               <p>Confira se o OAuth do Google e o provider do Supabase estão usando o mesmo Client ID e Client Secret.</p>
               <ul>
                 <li>Supabase callback: <code>https://egdltobtsldomxzlzhnt.supabase.co/auth/v1/callback</code></li>
-                <li>App callback local: <code>http://localhost:3000/auth/callback</code></li>
+                <li>App callback: <code>https://paddocke.vercel.app/auth/callback</code></li>
                 <li>Se o app estiver em teste no Google, seu e-mail precisa estar em usuários de teste.</li>
               </ul>
               <div class="auth-help-actions">

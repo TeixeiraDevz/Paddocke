@@ -4509,6 +4509,32 @@ body.auth-visible {
   color: #79dfb2;
 }
 
+.auth-confirmation {
+  display: grid;
+  gap: 10px;
+  margin-top: 2px;
+  padding: 14px;
+  border: 1px solid rgba(121, 223, 178, 0.28);
+  border-radius: 14px;
+  color: #c9d7e8;
+  background: rgba(121, 223, 178, 0.08);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.auth-confirmation[hidden] {
+  display: none;
+}
+
+.auth-confirmation strong {
+  color: #79dfb2;
+  font-size: 14px;
+}
+
+.auth-confirmation p {
+  margin: 0;
+}
+
 .auth-help {
   display: grid;
   gap: 10px;
