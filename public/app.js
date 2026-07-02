@@ -30,14 +30,14 @@ const PROFILE_IMAGE_OUTPUT = {
 };
 
 const PATENTS = [
-  { name: "Bronze", level: 1, xp: 0, image: "/assets/ranks/bronze.png?v=transparent", color: "#b36b2c" },
-  { name: "Cobre", level: 10, xp: 2500, image: "/assets/ranks/cobre.png?v=transparent", color: "#c8783c" },
-  { name: "Prata", level: 25, xp: 10000, image: "/assets/ranks/prata.png?v=transparent", color: "#9aa4ae" },
-  { name: "Ouro", level: 50, xp: 30000, image: "/assets/ranks/ouro.png?v=transparent", color: "#f2b705" },
-  { name: "Safira", level: 75, xp: 50000, image: "/assets/ranks/safira.png?v=transparent", color: "#1997ff" },
-  { name: "Diamante", level: 100, xp: 75000, image: "/assets/ranks/diamante.png?v=transparent", color: "#168bff" },
-  { name: "Diamante Vermelho", level: 150, xp: 150000, image: "/assets/ranks/diamante-vermelho.png?v=transparent", color: "#f12b2b" },
-  { name: "Kwita", level: 300, xp: ADMIN_BASE_XP, image: "/assets/ranks/kwita.png?v=transparent", color: "#9b5cff" }
+  { name: "Bronze", level: 1, xp: 0, image: "/assets/ranks/optimized/bronze.webp", color: "#b36b2c" },
+  { name: "Cobre", level: 10, xp: 2500, image: "/assets/ranks/optimized/cobre.webp", color: "#c8783c" },
+  { name: "Prata", level: 25, xp: 10000, image: "/assets/ranks/optimized/prata.webp", color: "#9aa4ae" },
+  { name: "Ouro", level: 50, xp: 30000, image: "/assets/ranks/optimized/ouro.webp", color: "#f2b705" },
+  { name: "Safira", level: 75, xp: 50000, image: "/assets/ranks/optimized/safira.webp", color: "#1997ff" },
+  { name: "Diamante", level: 100, xp: 75000, image: "/assets/ranks/optimized/diamante.webp", color: "#168bff" },
+  { name: "Diamante Vermelho", level: 150, xp: 150000, image: "/assets/ranks/optimized/diamante-vermelho.webp", color: "#f12b2b" },
+  { name: "Kwita", level: 300, xp: ADMIN_BASE_XP, image: "/assets/ranks/optimized/kwita.webp", color: "#9b5cff" }
 ];
 
 const icons = {
