@@ -4300,6 +4300,7 @@ body.auth-visible {
 }
 
 .auth-card {
+  box-sizing: border-box;
   width: min(100%, 580px);
   min-width: 0;
   max-height: none;
@@ -4773,7 +4774,7 @@ body.auth-visible {
     width: 100vw;
     min-height: 100svh;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
     padding: 24px 14px;
     overflow-x: hidden;
   }
@@ -4781,12 +4782,13 @@ body.auth-visible {
   .auth-panel {
     width: 100%;
     max-width: none;
-    align-items: flex-start;
+    align-items: center;
   }
 
   .auth-card {
-    width: min(100%, 362px);
+    width: min(362px, calc(100vw - 28px));
     max-width: calc(100vw - 28px);
+    margin-inline: auto;
     border-radius: 24px;
     padding: 26px;
   }
