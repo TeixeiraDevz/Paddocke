@@ -24,18 +24,25 @@ async function checkProductionShell() {
   assert(html.includes("Paddocke"), "Home should contain Paddocke brand");
   assert(html.includes("app.js"), "Home should load app.js");
   assert(html.includes("auth-shell"), "Home should include auth shell");
+  if (process.env.QA_STRICT_HEADERS === "true") {
+    assert((response.headers.get("x-content-type-options") || "") === "nosniff", "Static responses should include nosniff");
+    assert((response.headers.get("x-frame-options") || "") === "DENY", "Static responses should deny framing");
+  }
   return "home ok";
 }
 
 async function checkRuntimeConfig() {
   const response = await fetchOk(`${BASE_URL}/api/config`);
   const config = await response.json();
-  assert(config.appUrl === "https://paddocke.vercel.app", "APP_URL should point to production");
+  const isProduction = BASE_URL.includes("paddocke.vercel.app");
+  if (isProduction) {
+    assert(config.appUrl === "https://paddocke.vercel.app", "APP_URL should point to production");
+  }
   assert(config.aiConfigured === true, "OpenAI should be configured in production");
   assert(config.emailConfigured === true, "Resend should be configured in production");
   assert(Boolean(config.supabaseUrl), "Supabase URL should be present");
   assert(Boolean(config.supabaseAnonKey), "Supabase anon key should be present");
-  assert(Boolean(config.adminEmails), "Admin emails should be present");
+  if (isProduction) assert(Boolean(config.adminEmails), "Admin emails should be present");
   return config;
 }
 
@@ -50,6 +57,23 @@ async function checkGoogleOAuth(config) {
   assert(response.status >= 300 && response.status < 400, "Google OAuth should redirect");
   assert(location.startsWith("https://accounts.google.com"), "Google OAuth should redirect to Google");
   return "google oauth ok";
+}
+
+async function checkAssistantCommand() {
+  const response = await fetchOk(`${BASE_URL}/api/assistant`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      command: "quais minhas tarefas de hoje",
+      today: "2026-07-03",
+      tasks: [
+        { id: "qa-1", title: "Consulta medica", date: "2026-07-03", time: "09:25", completed: false }
+      ]
+    })
+  });
+  const result = await response.json();
+  assert(result.reply && result.reply.includes("Consulta medica"), "Assistant should answer today task queries");
+  return "assistant command ok";
 }
 
 async function checkRankAssets() {
@@ -75,19 +99,33 @@ function checkSecurityInvariants() {
   const app = read("public/app.js");
   const server = read("server.js");
   const serverConfig = read("server/config.js");
+  const serverApi = read("server/api.js");
+  const serverHttp = read("server/http.js");
+  const serverStatic = read("server/static.js");
   const schema = read("supabase/schema.sql");
+  const plansMarkup = read("public/index.html");
   const vercelIgnore = read(".vercelignore");
   const gitIgnore = read(".gitignore");
 
   assert(server.includes('require("./server/api")'), "Server entrypoint should use modular API router");
+  assert(serverApi.includes("rateLimit(request, response"), "Sensitive API routes should use rate limiting");
+  assert(serverHttp.includes("X-Content-Type-Options"), "JSON responses should include security headers");
+  assert(serverStatic.includes("securityHeaders()"), "Static responses should include security headers");
   assert(serverConfig.includes('if (process.env.VERCEL) return;'), "Vercel should not load local .env");
   assert(serverConfig.includes('".webp": "image/webp"'), "Server should serve WebP with correct MIME type");
   assert(vercelIgnore.includes(".env"), ".vercelignore should exclude .env");
   assert(gitIgnore.includes(".env"), ".gitignore should exclude .env");
   assert(app.includes('.eq("user_id", currentUser.id)'), "Tasks should be read by current user");
   assert(app.includes("user_id: currentUser.id"), "Tasks should be written with current user_id");
+  assert(app.includes('from "./js/domain/time.js"'), "Task time normalization should live in a domain module");
+  assert(!app.includes("[data-waitlist]"), "Plan waitlist handler should not exist in MVP");
+  assert(!plansMarkup.includes("data-waitlist"), "Plan waitlist buttons should not exist in MVP");
+  assert(!plansMarkup.includes(">Teams<"), "Teams plan should stay out of the MVP plan screen");
   assert(schema.includes("alter table public.tasks enable row level security"), "Tasks RLS should be enabled");
   assert(schema.includes("auth.uid() = user_id"), "RLS should scope rows by user_id");
+  assert(schema.includes("with check (auth.uid() = user_id)"), "RLS updates should validate final user_id");
+  assert(schema.includes("public.admin_emails"), "Admin entitlement should have a server-side database guard");
+  assert(schema.includes("guard_profile_admin_fields"), "Profile admin fields should be guarded in the database");
   assert(app.includes("emailSchedulerSaved: false"), "Notification scheduler fallback should exist");
   assert(app.includes("startPendingSignupLogin"), "Email confirmation retry flow should exist");
   return "security invariants ok";
@@ -99,6 +137,7 @@ async function main() {
   const config = await checkRuntimeConfig();
   results.push("runtime config ok");
   results.push(await checkGoogleOAuth(config));
+  results.push(await checkAssistantCommand());
   results.push(await checkRankAssets());
   results.push(checkSecurityInvariants());
   console.table(results.map((result) => ({ check: result })));

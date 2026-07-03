@@ -1,7 +1,17 @@
+function securityHeaders() {
+  return {
+    "Permissions-Policy": "camera=(), geolocation=(), payment=()",
+    "Referrer-Policy": "strict-origin-when-cross-origin",
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY"
+  };
+}
+
 function sendJson(response, status, payload) {
   response.writeHead(status, {
     "Cache-Control": "no-store",
-    "Content-Type": "application/json; charset=utf-8"
+    "Content-Type": "application/json; charset=utf-8",
+    ...securityHeaders()
   });
   response.end(JSON.stringify(payload));
 }
@@ -24,4 +34,4 @@ function readJsonBody(request) {
   });
 }
 
-module.exports = { readJsonBody, sendJson };
+module.exports = { readJsonBody, securityHeaders, sendJson };

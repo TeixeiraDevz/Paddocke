@@ -89,6 +89,16 @@ Com `SUPABASE_URL` e `SUPABASE_ANON_KEY` no `.env`, o app sincroniza:
 - `tasks`: tarefas do usuario com RLS.
 - `notification_preferences`: opt-in, e-mail e horario do resumo diario.
 
+Antes de abrir testes com usuarios reais, rode tambem os SQLs em `supabase/fixes/`
+no SQL Editor. O hardening de admin cria `admin_emails`; depois cadastre o e-mail
+do dono com:
+
+```sql
+insert into public.admin_emails (email)
+values ('seu-email-admin@exemplo.com')
+on conflict do nothing;
+```
+
 No primeiro login real, se o usuario ainda nao tiver tarefas no Supabase, o app
 migra uma vez as tarefas locais do navegador para a conta autenticada.
 

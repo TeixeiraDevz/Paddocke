@@ -46,6 +46,49 @@ create table if not exists public.notification_preferences (
 alter table public.notification_preferences
   add column if not exists include_completed boolean not null default false;
 
+create table if not exists public.admin_emails (
+  email text primary key,
+  created_at timestamptz not null default now()
+);
+
+alter table public.admin_emails enable row level security;
+revoke all on table public.admin_emails from anon, authenticated;
+grant select, insert, update, delete on table public.admin_emails to service_role;
+
+create or replace function public.is_current_user_admin()
+returns boolean
+language sql
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.admin_emails
+    where lower(email) = lower(coalesce(auth.jwt() ->> 'email', ''))
+  );
+$$;
+
+create or replace function public.guard_profile_admin_fields()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+  if not public.is_current_user_admin() then
+    if new.xp >= 300000 then
+      new.xp := least(coalesce(old.xp, 0), 299999);
+    end if;
+    new.plan := coalesce(old.plan, 'free');
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists guard_profile_admin_fields on public.profiles;
+create trigger guard_profile_admin_fields
+  before update on public.profiles
+  for each row execute procedure public.guard_profile_admin_fields();
+
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
@@ -110,7 +153,8 @@ create policy "Users can create their profile"
 
 create policy "Users can update their profile"
   on public.profiles for update
-  using (auth.uid() = id);
+  using (auth.uid() = id)
+  with check (auth.uid() = id);
 
 create policy "Users can read their tasks"
   on public.tasks for select
@@ -122,7 +166,8 @@ create policy "Users can create their tasks"
 
 create policy "Users can update their tasks"
   on public.tasks for update
-  using (auth.uid() = user_id);
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
 
 create policy "Users can delete their tasks"
   on public.tasks for delete
@@ -138,4 +183,5 @@ create policy "Users can create their notification preferences"
 
 create policy "Users can update their notification preferences"
   on public.notification_preferences for update
-  using (auth.uid() = user_id);
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
