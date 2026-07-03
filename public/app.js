@@ -2703,103 +2703,35 @@ async function handleProfileImageFile(event, kind) {
   }
 }
 
-function formatTaskTimeDraft(value) {
-  const digits = String(value || "").replace(/\D/g, "").slice(0, 4);
-  if (digits.length <= 2) return digits;
-  return `${digits.slice(0, 2)}:${digits.slice(2)}`;
-}
-
 function normalizeTaskTimeValue(value) {
-  const draft = formatTaskTimeDraft(value);
-  if (!draft) return "";
-  const [rawHour = "0", rawMinute = "0"] = draft.split(":");
+  const trimmed = String(value || "").trim();
+  if (!trimmed) return "";
+
+  const colonMatch = trimmed.match(/^(\d{1,2})\s*:\s*(\d{1,2})$/);
+  const digits = trimmed.replace(/\D/g, "");
+  let rawHour = "";
+  let rawMinute = "";
+
+  if (colonMatch) {
+    rawHour = colonMatch[1];
+    rawMinute = colonMatch[2];
+  } else if (digits.length <= 2) {
+    rawHour = digits;
+    rawMinute = "0";
+  } else {
+    rawHour = digits.slice(0, -2);
+    rawMinute = digits.slice(-2);
+  }
+
   const hour = Math.min(23, Math.max(0, Number(rawHour || 0)));
   const minute = Math.min(59, Math.max(0, Number(rawMinute || 0)));
   return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
 }
 
-function selectTaskTimeSegment(input, pointerX) {
-  if (!input.value) return;
-  const rect = input.getBoundingClientRect();
-  const localX = pointerX - rect.left;
-  const range = localX >= 34 ? [3, 5] : [0, 2];
-  input.dataset.timeSegment = range[0] === 3 ? "minute" : "hour";
-  input.dataset.timeSegmentBuffer = "";
-  window.requestAnimationFrame(() => input.setSelectionRange(range[0], range[1]));
-}
-
-function getTaskTimeSelectionSegment(input) {
-  if (input.selectionStart === 0 && input.selectionEnd === 2) return "hour";
-  if (input.selectionStart === 3 && input.selectionEnd === 5) return "minute";
-  return input.dataset.timeSegment || "minute";
-}
-
-function setTaskTimeSegment(input, segment, value) {
-  const normalized = normalizeTaskTimeValue(input.value || "00:00");
-  const [hour, minute] = normalized.split(":");
-  const safeValue = segment === "hour"
-    ? Math.min(23, Math.max(0, Number(value || 0)))
-    : Math.min(59, Math.max(0, Number(value || 0)));
-  const padded = String(safeValue).padStart(2, "0");
-  input.value = segment === "hour" ? `${padded}:${minute}` : `${hour}:${padded}`;
-  const range = segment === "hour" ? [0, 2] : [3, 5];
-  input.dataset.timeSegment = segment;
-  window.requestAnimationFrame(() => input.setSelectionRange(range[0], range[1]));
-}
-
-function typeTaskTimeDigit(input, digit) {
-  const segment = getTaskTimeSelectionSegment(input);
-  const previousSegment = input.dataset.timeSegment;
-  let buffer = previousSegment === segment ? input.dataset.timeSegmentBuffer || "" : "";
-  if ((segment === "hour" && input.selectionStart === 0 && input.selectionEnd === 2) ||
-      (segment === "minute" && input.selectionStart === 3 && input.selectionEnd === 5)) {
-    buffer = buffer.length >= 2 ? "" : buffer;
-  }
-  buffer = `${buffer}${digit}`.slice(-2);
-  input.dataset.timeSegmentBuffer = buffer;
-  setTaskTimeSegment(input, segment, buffer);
-}
-
 function setupTaskTimeInput() {
   const input = document.querySelector("#task-time");
-  input.addEventListener("pointerdown", (event) => {
-    event.preventDefault();
-    input.focus();
-    selectTaskTimeSegment(input, event.clientX);
-  });
-  input.addEventListener("keydown", (event) => {
-    if (/^\d$/.test(event.key)) {
-      event.preventDefault();
-      typeTaskTimeDigit(event.currentTarget, event.key);
-      return;
-    }
-    if (event.key === "ArrowLeft") {
-      event.preventDefault();
-      event.currentTarget.dataset.timeSegment = "hour";
-      event.currentTarget.dataset.timeSegmentBuffer = "";
-      event.currentTarget.setSelectionRange(0, 2);
-      return;
-    }
-    if (event.key === "ArrowRight") {
-      event.preventDefault();
-      event.currentTarget.dataset.timeSegment = "minute";
-      event.currentTarget.dataset.timeSegmentBuffer = "";
-      event.currentTarget.setSelectionRange(3, 5);
-      return;
-    }
-    if (event.key === "Backspace" || event.key === "Delete") {
-      event.preventDefault();
-      const segment = getTaskTimeSelectionSegment(event.currentTarget);
-      event.currentTarget.dataset.timeSegmentBuffer = "";
-      setTaskTimeSegment(event.currentTarget, segment, "0");
-    }
-  });
-  input.addEventListener("input", (event) => {
-    event.currentTarget.value = formatTaskTimeDraft(event.currentTarget.value);
-  });
   input.addEventListener("blur", (event) => {
     event.currentTarget.value = normalizeTaskTimeValue(event.currentTarget.value);
-    event.currentTarget.dataset.timeSegmentBuffer = "";
   });
 }
 
@@ -2867,6 +2799,7 @@ function bindEvents() {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const taskData = Object.fromEntries(formData.entries());
+    taskData.time = normalizeTaskTimeValue(taskData.time);
     if (editingTaskId) updateTask(editingTaskId, taskData);
     else addTask(taskData);
     closeTaskModal();
