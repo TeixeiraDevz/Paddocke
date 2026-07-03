@@ -686,7 +686,16 @@
         <div class="form-row">
           <label>
             Horário
-            <input id="task-time" name="time" type="time" />
+            <input
+              id="task-time"
+              name="time"
+              type="text"
+              inputmode="numeric"
+              maxlength="5"
+              pattern="^([01]\d|2[0-3]):[0-5]\d$"
+              placeholder="HH:MM"
+              autocomplete="off"
+            />
           </label>
           <label>
             Prioridade

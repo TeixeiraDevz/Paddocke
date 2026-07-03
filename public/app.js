@@ -2703,6 +2703,49 @@ async function handleProfileImageFile(event, kind) {
   }
 }
 
+function formatTaskTimeDraft(value) {
+  const digits = String(value || "").replace(/\D/g, "").slice(0, 4);
+  if (digits.length <= 2) return digits;
+  return `${digits.slice(0, 2)}:${digits.slice(2)}`;
+}
+
+function normalizeTaskTimeValue(value) {
+  const draft = formatTaskTimeDraft(value);
+  if (!draft) return "";
+  const [rawHour = "0", rawMinute = "0"] = draft.split(":");
+  const hour = Math.min(23, Math.max(0, Number(rawHour || 0)));
+  const minute = Math.min(59, Math.max(0, Number(rawMinute || 0)));
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+}
+
+function selectTaskTimeSegment(input, pointerX) {
+  if (!input.value) return;
+  const rect = input.getBoundingClientRect();
+  const styles = window.getComputedStyle(input);
+  const paddingLeft = Number.parseFloat(styles.paddingLeft) || 0;
+  const canvas = selectTaskTimeSegment.canvas || (selectTaskTimeSegment.canvas = document.createElement("canvas"));
+  const context = canvas.getContext("2d");
+  context.font = styles.font;
+  const minuteStart = paddingLeft + context.measureText(input.value.slice(0, 3)).width - 2;
+  const localX = pointerX - rect.left;
+  const range = localX >= minuteStart ? [3, 5] : [0, 2];
+  window.requestAnimationFrame(() => input.setSelectionRange(range[0], range[1]));
+}
+
+function setupTaskTimeInput() {
+  const input = document.querySelector("#task-time");
+  input.addEventListener("pointerdown", (event) => {
+    input.focus();
+    selectTaskTimeSegment(input, event.clientX);
+  });
+  input.addEventListener("input", (event) => {
+    event.currentTarget.value = formatTaskTimeDraft(event.currentTarget.value);
+  });
+  input.addEventListener("blur", (event) => {
+    event.currentTarget.value = normalizeTaskTimeValue(event.currentTarget.value);
+  });
+}
+
 function bindEvents() {
   document.querySelectorAll(".nav-item").forEach((button) => {
     button.addEventListener("click", () => showView(button.dataset.view));
@@ -2761,6 +2804,7 @@ function bindEvents() {
   });
   document.querySelector("#close-modal").addEventListener("click", closeTaskModal);
   document.querySelector("#cancel-modal").addEventListener("click", closeTaskModal);
+  setupTaskTimeInput();
 
   document.querySelector("#task-form").addEventListener("submit", (event) => {
     event.preventDefault();
