@@ -2721,28 +2721,85 @@ function normalizeTaskTimeValue(value) {
 function selectTaskTimeSegment(input, pointerX) {
   if (!input.value) return;
   const rect = input.getBoundingClientRect();
-  const styles = window.getComputedStyle(input);
-  const paddingLeft = Number.parseFloat(styles.paddingLeft) || 0;
-  const canvas = selectTaskTimeSegment.canvas || (selectTaskTimeSegment.canvas = document.createElement("canvas"));
-  const context = canvas.getContext("2d");
-  context.font = styles.font;
-  const minuteStart = paddingLeft + context.measureText(input.value.slice(0, 3)).width - 2;
   const localX = pointerX - rect.left;
-  const range = localX >= minuteStart ? [3, 5] : [0, 2];
+  const range = localX >= 34 ? [3, 5] : [0, 2];
+  input.dataset.timeSegment = range[0] === 3 ? "minute" : "hour";
+  input.dataset.timeSegmentBuffer = "";
   window.requestAnimationFrame(() => input.setSelectionRange(range[0], range[1]));
+}
+
+function getTaskTimeSelectionSegment(input) {
+  if (input.selectionStart === 0 && input.selectionEnd === 2) return "hour";
+  if (input.selectionStart === 3 && input.selectionEnd === 5) return "minute";
+  return input.dataset.timeSegment || "minute";
+}
+
+function setTaskTimeSegment(input, segment, value) {
+  const normalized = normalizeTaskTimeValue(input.value || "00:00");
+  const [hour, minute] = normalized.split(":");
+  const safeValue = segment === "hour"
+    ? Math.min(23, Math.max(0, Number(value || 0)))
+    : Math.min(59, Math.max(0, Number(value || 0)));
+  const padded = String(safeValue).padStart(2, "0");
+  input.value = segment === "hour" ? `${padded}:${minute}` : `${hour}:${padded}`;
+  const range = segment === "hour" ? [0, 2] : [3, 5];
+  input.dataset.timeSegment = segment;
+  window.requestAnimationFrame(() => input.setSelectionRange(range[0], range[1]));
+}
+
+function typeTaskTimeDigit(input, digit) {
+  const segment = getTaskTimeSelectionSegment(input);
+  const previousSegment = input.dataset.timeSegment;
+  let buffer = previousSegment === segment ? input.dataset.timeSegmentBuffer || "" : "";
+  if ((segment === "hour" && input.selectionStart === 0 && input.selectionEnd === 2) ||
+      (segment === "minute" && input.selectionStart === 3 && input.selectionEnd === 5)) {
+    buffer = buffer.length >= 2 ? "" : buffer;
+  }
+  buffer = `${buffer}${digit}`.slice(-2);
+  input.dataset.timeSegmentBuffer = buffer;
+  setTaskTimeSegment(input, segment, buffer);
 }
 
 function setupTaskTimeInput() {
   const input = document.querySelector("#task-time");
   input.addEventListener("pointerdown", (event) => {
+    event.preventDefault();
     input.focus();
     selectTaskTimeSegment(input, event.clientX);
+  });
+  input.addEventListener("keydown", (event) => {
+    if (/^\d$/.test(event.key)) {
+      event.preventDefault();
+      typeTaskTimeDigit(event.currentTarget, event.key);
+      return;
+    }
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      event.currentTarget.dataset.timeSegment = "hour";
+      event.currentTarget.dataset.timeSegmentBuffer = "";
+      event.currentTarget.setSelectionRange(0, 2);
+      return;
+    }
+    if (event.key === "ArrowRight") {
+      event.preventDefault();
+      event.currentTarget.dataset.timeSegment = "minute";
+      event.currentTarget.dataset.timeSegmentBuffer = "";
+      event.currentTarget.setSelectionRange(3, 5);
+      return;
+    }
+    if (event.key === "Backspace" || event.key === "Delete") {
+      event.preventDefault();
+      const segment = getTaskTimeSelectionSegment(event.currentTarget);
+      event.currentTarget.dataset.timeSegmentBuffer = "";
+      setTaskTimeSegment(event.currentTarget, segment, "0");
+    }
   });
   input.addEventListener("input", (event) => {
     event.currentTarget.value = formatTaskTimeDraft(event.currentTarget.value);
   });
   input.addEventListener("blur", (event) => {
     event.currentTarget.value = normalizeTaskTimeValue(event.currentTarget.value);
+    event.currentTarget.dataset.timeSegmentBuffer = "";
   });
 }
 
