@@ -1,212 +1,28 @@
-const STORAGE_KEY = "paddocke-state-v1";
-const FLOATING_POMODORO_POSITION_KEY = "paddocke-floating-pomodoro-position";
-
-const categoryColors = {
-  Pessoais: "#2f86ff",
-  Faculdade: "#a77bff",
-  Trabalho: "#57d8ff",
-  Treino: "#ffad5a"
-};
-
-const pomodoroCategories = new Set(["Pessoais", "Faculdade"]);
-
-const XP_RULES = {
-  taskComplete: 10,
-  pomodoroComplete: 25,
-  dailyStreak: 15,
-  allDailyTasks: 80,
-  perfectWeek: 200,
-  perfectMonth: 1000,
-  maxTaskAwardsPerDay: 20,
-  maxPomodoroAwardsPerDay: 16
-};
-
-const COMPLETED_TASK_RETENTION_DAYS = 7;
-const ADMIN_BASE_XP = 300000;
-const PROFILE_IMAGE_SOURCE_MAX_BYTES = 8 * 1024 * 1024;
-const PROFILE_IMAGE_OUTPUT = {
-  avatar: { width: 512, height: 512, quality: 0.88 },
-  banner: { width: 1600, height: 600, quality: 0.86 }
-};
-
-const PATENTS = [
-  { name: "Bronze", level: 1, xp: 0, image: "/assets/ranks/optimized/bronze.webp", color: "#b36b2c" },
-  { name: "Cobre", level: 10, xp: 2500, image: "/assets/ranks/optimized/cobre.webp", color: "#c8783c" },
-  { name: "Prata", level: 25, xp: 10000, image: "/assets/ranks/optimized/prata.webp", color: "#9aa4ae" },
-  { name: "Ouro", level: 50, xp: 30000, image: "/assets/ranks/optimized/ouro.webp", color: "#f2b705" },
-  { name: "Safira", level: 75, xp: 50000, image: "/assets/ranks/optimized/safira.webp", color: "#1997ff" },
-  { name: "Diamante", level: 100, xp: 75000, image: "/assets/ranks/optimized/diamante.webp", color: "#168bff" },
-  { name: "Diamante Vermelho", level: 150, xp: 150000, image: "/assets/ranks/optimized/diamante-vermelho.webp", color: "#f12b2b" },
-  { name: "Kwita", level: 300, xp: ADMIN_BASE_XP, image: "/assets/ranks/optimized/kwita.webp", color: "#9b5cff" }
-];
-
-const icons = {
-  "arrow-up": '<path d="m6 12 6-6 6 6"/><path d="M12 18V6"/>',
-  bell: '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/>',
-  "book-open": '<path d="M12 7v14"/><path d="M3 6.8A2 2 0 0 1 5.2 5C7.4 5.2 9.3 6 12 7.5c2.7-1.5 4.6-2.3 6.8-2.5A2 2 0 0 1 21 6.8v11.6a2 2 0 0 1-2.2 2C16.6 20.2 14.7 19.4 12 18c-2.7 1.4-4.6 2.2-6.8 2.4A2 2 0 0 1 3 18.4Z"/>',
-  briefcase: '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 12h18M10 12v2h4v-2"/>',
-  calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/>',
-  check: '<path d="m5 12 4 4L19 6"/>',
-  "chevron-left": '<path d="m15 18-6-6 6-6"/>',
-  "chevron-right": '<path d="m9 18 6-6-6-6"/>',
-  dumbbell: '<path d="M6 7v10M18 7v10M3 9v6M21 9v6M6 12h12"/>',
-  flame: '<path d="M12 22c4 0 7-3 7-7 0-3-2-6-5-9 0 3-2 5-4 6 0-3-1-5-2-7-2 3-4 6-4 10 0 4 4 7 8 7Z"/><path d="M9.5 17.5c0 1.5 1 2.5 2.5 2.5s2.5-1 2.5-2.5c0-1.3-.8-2.5-2.2-3.7-.2 1.2-.9 2-1.8 2.5-.1-.8-.4-1.5-.8-2.1-.1 1.1-.2 2.1-.2 3.3Z"/>',
-  "graduation-cap": '<path d="m22 10-10-5-10 5 10 5 10-5Z"/><path d="M6 12v5c3 2 9 2 12 0v-5"/><path d="M22 10v6"/>',
-  grid: '<rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/>',
-  eye: '<path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/>',
-  "eye-off": '<path d="m3 3 18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.9 5.2A11 11 0 0 1 12 5c6.5 0 10 7 10 7a15 15 0 0 1-2.1 2.8M6.6 6.6C3.7 8.3 2 12 2 12s3.5 7 10 7a10 10 0 0 0 4.1-.9"/>',
-  menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
-  lock: '<rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
-  "log-out": '<path d="M10 17l5-5-5-5M15 12H3M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>',
-  mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',
-  mic: '<rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5M8 22h8"/>',
-  moon: '<path d="M20.5 14.5A8 8 0 0 1 9.5 3.5 8.5 8.5 0 1 0 20.5 14.5Z"/>',
-  more: '<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>',
-  pause: '<path d="M9 5v14M15 5v14"/>',
-  pencil: '<path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4 11.5-11.5Z"/><path d="m14 6 4 4"/>',
-  play: '<path d="m8 5 11 7-11 7V5Z"/>',
-  plus: '<path d="M12 5v14M5 12h14"/>',
-  rotate: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>',
-  search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/>',
-  settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H3v-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.6V3h4v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/>',
-  skip: '<path d="m5 5 10 7L5 19V5ZM19 5v14"/>',
-  sparkles: '<path d="m12 3 1.1 3.1L16 7.5l-2.9 1.4L12 12l-1.1-3.1L8 7.5l2.9-1.4L12 3ZM19 13l.8 2.2L22 16l-2.2.8L19 19l-.8-2.2L16 16l2.2-.8L19 13ZM6 13l.8 2.2L9 16l-2.2.8L6 19l-.8-2.2L3 16l2.2-.8L6 13Z"/>',
-  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
-  timer: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6M12 2v3"/>',
-  trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 14h10l1-14M9 7V4h6v3"/>',
-  user: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
-  x: '<path d="m6 6 12 12M18 6 6 18"/>'
-};
-
-const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
-  day: "2-digit",
-  month: "long",
-  year: "numeric"
-});
-
-const monthFormatter = new Intl.DateTimeFormat("pt-BR", {
-  month: "long",
-  year: "numeric"
-});
-
-const weekdayFormatter = new Intl.DateTimeFormat("pt-BR", {
-  weekday: "long",
-  day: "numeric",
-  month: "long"
-});
-
-function localDateKey(date = new Date()) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
-function addDays(date, amount) {
-  const result = new Date(date);
-  result.setDate(result.getDate() + amount);
-  return result;
-}
-
-function createInitialState(options = {}) {
-  const today = new Date();
-  const todayKey = localDateKey(today);
-  const tomorrowKey = localDateKey(addDays(today, 1));
-  const laterKey = localDateKey(addDays(today, 3));
-
-  return {
-    tasks: options.demo ? [
-      {
-        id: crypto.randomUUID(),
-        title: "Revisar anotações de Cálculo",
-        category: "Faculdade",
-        date: todayKey,
-        time: "09:30",
-        priority: "high",
-        notes: "Capítulos 3 e 4",
-        completed: false,
-        completedAt: null,
-        xpAwardedAt: null
-      },
-      {
-        id: crypto.randomUUID(),
-        title: "Finalizar apresentação do projeto",
-        category: "Trabalho",
-        date: todayKey,
-        time: "14:00",
-        priority: "high",
-        notes: "",
-        completed: false,
-        completedAt: null,
-        xpAwardedAt: null
-      },
-      {
-        id: crypto.randomUUID(),
-        title: "Treino de superiores",
-        category: "Treino",
-        date: todayKey,
-        time: "18:30",
-        priority: "medium",
-        notes: "Peito, ombro e tríceps",
-        completed: false,
-        completedAt: null,
-        xpAwardedAt: null
-      },
-      {
-        id: crypto.randomUUID(),
-        title: "Organizar documentos pessoais",
-        category: "Pessoais",
-        date: tomorrowKey,
-        time: "10:00",
-        priority: "low",
-        notes: "",
-        completed: false,
-        completedAt: null,
-        xpAwardedAt: null
-      },
-      {
-        id: crypto.randomUUID(),
-        title: "Entregar lista de exercícios",
-        category: "Faculdade",
-        date: laterKey,
-        time: "20:00",
-        priority: "medium",
-        notes: "",
-        completed: false,
-        completedAt: null,
-        xpAwardedAt: null
-      }
-    ] : [],
-    xp: options.admin ? ADMIN_BASE_XP : 0,
-    focusSessions: 0,
-    focusHistory: [],
-    focusSessionDetails: [],
-    taskCompletionHistory: [],
-    xpLedger: {
-      taskAwards: [],
-      pomodoroAwards: [],
-      streakBonusDates: [],
-      dailyCompletionBonusDates: [],
-      perfectWeekBonuses: [],
-      perfectMonthBonuses: []
-    },
-    profile: {
-      displayName: "",
-      avatarUrl: "",
-      bio: "Focado em evoluir 1% todos os dias.",
-      location: "Brasil",
-      bannerUrl: ""
-    },
-    streakRecord: 0,
-    theme: "dark",
-    notifications: {
-      enabled: false,
-      email: "",
-      time: "07:00",
-      includeCompleted: false
-    }
-  };
-}
+import {
+  ADMIN_BASE_XP,
+  COMPLETED_TASK_RETENTION_DAYS,
+  FLOATING_POMODORO_POSITION_KEY,
+  PATENTS,
+  PROFILE_IMAGE_OUTPUT,
+  PROFILE_IMAGE_SOURCE_MAX_BYTES,
+  STORAGE_KEY,
+  XP_RULES,
+  categoryColors,
+  pomodoroCategories
+} from "./js/domain/app-config.js";
+import { createInitialState } from "./js/domain/initial-state.js";
+import { icons } from "./js/ui/icons.js";
+import {
+  addDays,
+  dateFormatter,
+  escapeHtml,
+  formatDisplayDate,
+  formatNumber,
+  localDateKey,
+  monthFormatter,
+  normalizeText,
+  weekdayFormatter
+} from "./js/shared/formatters.js";
 
 function loadState() {
   try {
@@ -995,7 +811,7 @@ function bindAuthEvents() {
   });
   document.querySelector("#demo-access-button").addEventListener("click", () => {
     sessionStorage.setItem("paddocke-demo-session", "true");
-    state = normalizeState(createInitialState({ demo: true, admin: true }));
+    state = normalizeState(createInitialState({ demo: true }));
     saveState({ syncNotifications: false, syncRemote: false });
     enterApp();
   });
@@ -1054,38 +870,6 @@ async function initializeAuth() {
   } else {
     showAuthScreen();
   }
-}
-
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-function normalizeText(value) {
-  return value
-    .toLocaleLowerCase("pt-BR")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-}
-
-function formatDisplayDate(dateKey) {
-  const [year, month, day] = dateKey.split("-").map(Number);
-  const date = new Date(year, month - 1, day);
-  const todayKey = localDateKey();
-  const tomorrowKey = localDateKey(addDays(new Date(), 1));
-  if (dateKey === todayKey) return "Hoje";
-  if (dateKey === tomorrowKey) return "Amanhã";
-  return new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short" })
-    .format(date)
-    .replace(".", "");
-}
-
-function formatNumber(value) {
-  return new Intl.NumberFormat("pt-BR").format(value);
 }
 
 function getPatentByXp(xp = state.xp) {
