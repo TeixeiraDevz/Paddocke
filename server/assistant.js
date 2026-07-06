@@ -50,6 +50,28 @@ function describeServerTasks(tasks, label) {
 function createDeterministicAssistantResponse(body, tasks) {
   const normalized = normalizeCommandText(body.command);
   const profile = body.profile || {};
+  const asksConcept =
+    normalized.includes("o que e") ||
+    normalized.includes("oque e") ||
+    normalized.includes("que significa") ||
+    normalized.includes("significa") ||
+    normalized.includes("como funciona") ||
+    normalized.includes("explique") ||
+    normalized.includes("para que serve");
+
+  if (asksConcept && (normalized.includes("pomodoro") || normalized.includes("modo foco"))) {
+    return {
+      reply: "Pomodoro e uma tecnica de foco: voce trabalha por um periodo curto, normalmente 25 minutos, e depois faz uma pausa. No Paddocke, isso ajuda a manter ritmo, registrar sessoes de foco e ganhar XP.",
+      action: { type: "none" }
+    };
+  }
+
+  if (asksConcept && (normalized.includes("patente") || normalized.includes("xp") || normalized.includes("nivel"))) {
+    return {
+      reply: "Patente, nivel e XP fazem parte da gamificacao do Paddocke. Voce ganha progresso ao concluir tarefas e sessoes de foco. A patente mostra sua evolucao ao longo do tempo.",
+      action: { type: "none" }
+    };
+  }
 
   if (
     normalized.includes("nivel") ||
@@ -87,7 +109,6 @@ function createDeterministicAssistantResponse(body, tasks) {
 }
 
 async function createAiResponse(body) {
-  if (!process.env.OPENAI_API_KEY) return null;
   const tasks = (body.tasks || []).slice(0, 100).map((task) => ({
     id: task.id,
     title: task.title,
@@ -98,10 +119,12 @@ async function createAiResponse(body) {
   }));
   const deterministicResult = createDeterministicAssistantResponse(body, tasks);
   if (deterministicResult) return deterministicResult;
+  if (!process.env.OPENAI_API_KEY) return null;
 
   const prompt = [
     "Voce e o assistente por voz do Paddocke, um planejador pessoal.",
     "Responda em portugues brasileiro, de forma curta e natural para ser falada.",
+    "Voce tambem pode explicar conceitos do app, como Pomodoro, XP, patentes, calendario e tarefas. Para perguntas explicativas, use action none.",
     "Escolha somente uma acao permitida e nunca invente IDs de tarefas.",
     "Acoes: none, create_task, complete_task, delete_task, move_task, clear_calendar_day, start_pomodoro, pause_pomodoro, reset_pomodoro, open_calendar.",
     "Para create_task, use title, category, date YYYY-MM-DD, time HH:MM ou vazio, priority low|medium|high e notes.",

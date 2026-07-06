@@ -2195,6 +2195,14 @@ function processLocalAssistantCommand(rawCommand, fromVoice = false) {
   if (!command) return;
 
   let response = "";
+  const asksConcept =
+    normalized.includes("o que e") ||
+    normalized.includes("oque e") ||
+    normalized.includes("que significa") ||
+    normalized.includes("significa") ||
+    normalized.includes("como funciona") ||
+    normalized.includes("explique") ||
+    normalized.includes("para que serve");
 
   if (/^(adicione|adicionar|crie|criar|agende|agendar)/.test(normalized)) {
     const title = extractTaskTitle(command);
@@ -2258,6 +2266,12 @@ function processLocalAssistantCommand(rawCommand, fromVoice = false) {
       toggleTask(task.id);
       response = `Boa. ${task.title} foi concluída e você ganhou ${XP_RULES.taskComplete} pontos de experiência.`;
     }
+  } else if (asksConcept && (normalized.includes("pomodoro") || normalized.includes("modo foco"))) {
+    response =
+      "Pomodoro é uma técnica de foco: você trabalha por um período curto, normalmente 25 minutos, e depois faz uma pausa. No Paddocke, isso ajuda a manter ritmo, registrar sessões de foco e ganhar XP.";
+  } else if (asksConcept && (normalized.includes("patente") || normalized.includes("xp") || normalized.includes("nivel"))) {
+    response =
+      "Patente, nível e XP fazem parte da gamificação do Paddocke. Você ganha progresso ao concluir tarefas e sessões de foco. A patente mostra sua evolução ao longo do tempo.";
   } else if (
     normalized.includes("iniciar pomodoro") ||
     normalized.includes("ativar pomodoro") ||

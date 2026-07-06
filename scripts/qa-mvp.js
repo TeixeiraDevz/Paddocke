@@ -60,7 +60,7 @@ async function checkGoogleOAuth(config) {
 }
 
 async function checkAssistantCommand() {
-  const response = await fetchOk(`${BASE_URL}/api/assistant`, {
+  const taskResponse = await fetchOk(`${BASE_URL}/api/assistant`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -71,8 +71,21 @@ async function checkAssistantCommand() {
       ]
     })
   });
-  const result = await response.json();
-  assert(result.reply && result.reply.includes("Consulta medica"), "Assistant should answer today task queries");
+  const taskResult = await taskResponse.json();
+  assert(taskResult.reply && taskResult.reply.includes("Consulta medica"), "Assistant should answer today task queries");
+
+  const conceptResponse = await fetchOk(`${BASE_URL}/api/assistant`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      command: "o que significa pomodoro",
+      today: "2026-07-03",
+      tasks: []
+    })
+  });
+  const conceptResult = await conceptResponse.json();
+  assert(conceptResult.reply && conceptResult.reply.toLowerCase().includes("tecnica de foco"), "Assistant should explain Pomodoro");
+  assert(!conceptResult.reply.toLowerCase().includes("patente kwita"), "Pomodoro explanation should not answer profile rank");
   return "assistant command ok";
 }
 
