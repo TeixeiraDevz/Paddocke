@@ -134,6 +134,9 @@ function checkSecurityInvariants() {
   assert(!app.includes("[data-waitlist]"), "Plan waitlist handler should not exist in MVP");
   assert(!plansMarkup.includes("data-waitlist"), "Plan waitlist buttons should not exist in MVP");
   assert(!plansMarkup.includes(">Teams<"), "Teams plan should stay out of the MVP plan screen");
+  assert(plansMarkup.includes("ATIVO NO MVP"), "Plans screen should identify the active MVP plan");
+  assert(plansMarkup.includes("Aguardando validação"), "Pro plan should stay marked as validation-only");
+  assert(plansMarkup.includes("CRITÉRIO DO MVP"), "Plans screen should explain when Pro becomes eligible");
   assert(schema.includes("alter table public.tasks enable row level security"), "Tasks RLS should be enabled");
   assert(schema.includes("auth.uid() = user_id"), "RLS should scope rows by user_id");
   assert(schema.includes("with check (auth.uid() = user_id)"), "RLS updates should validate final user_id");

@@ -2667,13 +2667,15 @@ button.ai-avatar {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 20px;
-  max-width: 760px;
+  max-width: 880px;
   margin: 50px auto 0;
 }
 
 .plan-card {
   position: relative;
-  min-height: 430px;
+  display: flex;
+  min-height: 470px;
+  flex-direction: column;
   padding: 31px;
   border-radius: var(--radius-lg);
 }
@@ -2708,6 +2710,19 @@ button.ai-avatar {
   letter-spacing: 1.2px;
 }
 
+.plan-status {
+  align-self: flex-start;
+  margin-bottom: 16px;
+  padding: 7px 11px;
+  border: 1px solid rgba(74, 213, 153, 0.3);
+  border-radius: 999px;
+  color: #5ff0af;
+  background: rgba(74, 213, 153, 0.1);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
 .plan-card h2 {
   margin: 13px 0 8px;
   font-family: "Space Grotesk", sans-serif;
@@ -2729,10 +2744,18 @@ button.ai-avatar {
   font-size: 10px;
 }
 
+.plan-summary {
+  min-height: 44px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
 .plan-card ul {
   display: grid;
   gap: 16px;
-  min-height: 195px;
+  min-height: 220px;
   margin: 26px 0;
   padding: 23px 0 0;
   border-top: 1px solid var(--border);
@@ -2759,6 +2782,36 @@ button.ai-avatar {
 
 .plan-card li svg {
   width: 12px;
+}
+
+.plan-card .full {
+  margin-top: auto;
+}
+
+.plans-note {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.8fr) 1.2fr;
+  gap: 20px;
+  align-items: center;
+  max-width: 880px;
+  margin: 22px auto 0;
+  padding: 22px 24px;
+  border-radius: var(--radius-lg);
+}
+
+.plans-note strong {
+  display: block;
+  margin-top: 8px;
+  color: var(--text);
+  font-size: 16px;
+  line-height: 1.35;
+}
+
+.plans-note p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.65;
 }
 
 .task-modal {
@@ -3330,6 +3383,11 @@ button.ai-avatar {
   .plans-grid {
     grid-template-columns: 1fr;
     max-width: 560px;
+  }
+
+  .plans-note {
+    max-width: 560px;
+    grid-template-columns: 1fr;
   }
 
   .plan-card.featured {
@@ -4074,6 +4132,12 @@ button.ai-avatar {
 [data-theme="light"] .plan-price small,
 [data-theme="light"] .plan-card li {
   color: #526b86;
+}
+
+[data-theme="light"] .plan-status {
+  color: #08734f;
+  background: rgba(24, 172, 116, 0.12);
+  border-color: rgba(24, 172, 116, 0.28);
 }
 
 [data-theme="light"] .plan-card ul {
@@ -5077,6 +5141,24 @@ body.auth-visible {
 
   .plans-grid {
     margin-top: 22px;
+  }
+
+  .plan-card {
+    min-height: auto;
+    padding: 24px;
+  }
+
+  .plan-card ul {
+    min-height: 0;
+  }
+
+  .plan-summary {
+    min-height: 0;
+  }
+
+  .plans-note {
+    margin-top: 16px;
+    padding: 20px;
   }
 
   .task-modal form {
