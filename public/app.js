@@ -1,16 +1,15 @@
 import {
   ADMIN_BASE_XP,
-  COMPLETED_TASK_RETENTION_DAYS,
   FLOATING_POMODORO_POSITION_KEY,
   PATENTS,
   PROFILE_IMAGE_OUTPUT,
   PROFILE_IMAGE_SOURCE_MAX_BYTES,
-  STORAGE_KEY,
   XP_RULES,
   categoryColors,
   pomodoroCategories
 } from "./js/domain/app-config.js";
 import { createInitialState } from "./js/domain/initial-state.js";
+import { loadState, normalizeState, persistState, pruneCompletedTasks } from "./js/domain/state-store.js";
 import { normalizeTaskTimeValue } from "./js/domain/time.js";
 import { icons } from "./js/ui/icons.js";
 import {
@@ -24,46 +23,6 @@ import {
   normalizeText,
   weekdayFormatter
 } from "./js/shared/formatters.js";
-
-function loadState() {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    const parsed = stored ? JSON.parse(stored) : {};
-    return normalizeState(parsed);
-  } catch {
-    return normalizeState();
-  }
-}
-
-function normalizeState(stored = {}) {
-  const initial = createInitialState();
-  const normalized = {
-    ...initial,
-    ...stored,
-    notifications: { ...initial.notifications, ...(stored.notifications || {}) },
-    xpLedger: { ...initial.xpLedger, ...(stored.xpLedger || {}) },
-    profile: { ...initial.profile, ...(stored.profile || {}) },
-    focusHistory: Array.isArray(stored.focusHistory) ? stored.focusHistory : initial.focusHistory,
-    focusSessionDetails: Array.isArray(stored.focusSessionDetails) ? stored.focusSessionDetails : initial.focusSessionDetails,
-    taskCompletionHistory: Array.isArray(stored.taskCompletionHistory) ? stored.taskCompletionHistory : initial.taskCompletionHistory
-  };
-
-  normalized.tasks = Array.isArray(stored.tasks) ? stored.tasks : initial.tasks;
-  normalized.tasks = normalized.tasks.map((task) => ({
-    ...task,
-    completed: Boolean(task.completed),
-    completedAt: task.completedAt || null,
-    xpAwardedAt: task.xpAwardedAt || null
-  }));
-  normalized.xp = Math.max(0, Number(normalized.xp || 0));
-
-  Object.keys(normalized.xpLedger).forEach((key) => {
-    if (!Array.isArray(normalized.xpLedger[key])) normalized.xpLedger[key] = [];
-  });
-
-  pruneCompletedTasks(normalized);
-  return normalized;
-}
 
 let state = loadState();
 let activeCategory = "all";
@@ -107,7 +66,7 @@ const pomodoro = {
 
 function saveState(options = {}) {
   localMutationVersion += 1;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  persistState(state);
   if (options.syncNotifications !== false) syncNotificationData();
   if (options.syncRemote !== false) scheduleRemoteSync(options.remoteDelay);
 }
@@ -363,7 +322,9 @@ async function getRuntimeConfig() {
 
 function getAppUrl() {
   const configuredUrl = String(runtimeConfig.appUrl || "").trim().replace(/\/+$/, "");
-  return configuredUrl || window.location.origin;
+  const currentOrigin = window.location.origin.replace(/\/+$/, "");
+  if (currentOrigin && currentOrigin !== "null") return currentOrigin;
+  return configuredUrl;
 }
 
 function getAuthCallbackUrl() {
@@ -1465,7 +1426,7 @@ function renderPomodoroAvailability() {
 }
 
 function renderAll() {
-  const pruned = pruneCompletedTasks();
+  const pruned = pruneCompletedTasks(state);
   renderTasks();
   renderCounts();
   renderDailySummary();
@@ -1547,16 +1508,6 @@ function updateTask(taskId, taskData) {
   renderAll();
   showToast("Tarefa atualizada com sucesso.", "success");
   return task;
-}
-
-function pruneCompletedTasks(targetState = state) {
-  const cutoff = Date.now() - COMPLETED_TASK_RETENTION_DAYS * 24 * 60 * 60 * 1000;
-  const before = targetState.tasks.length;
-  targetState.tasks = targetState.tasks.filter((task) => {
-    if (!task.completed || !task.completedAt) return true;
-    return new Date(task.completedAt).getTime() >= cutoff;
-  });
-  return before - targetState.tasks.length;
 }
 
 function hasCompletedAllTasksForDate(dateKey) {

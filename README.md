@@ -13,6 +13,48 @@ npm start
 
 Acesse `http://localhost:3000`.
 
+## Ambientes e deploy seguro
+
+O projeto usa dois ambientes publicados:
+
+- Homologacao: `https://homo-paddocke.vercel.app`
+- Producao: `https://paddocke.vercel.app`
+
+Homologacao pode ficar protegida pelo SSO da Vercel. Nesse caso, o navegador
+redireciona visitantes para login da Vercel e o QA deve ser feito via CLI com
+`vercel curl`.
+
+Fluxo padrao:
+
+1. Desenvolva e valide localmente.
+2. Publique em homologacao com:
+
+```powershell
+npm run deploy:homo
+```
+
+3. Teste `https://homo-paddocke.vercel.app`.
+4. Se estiver tudo certo, publique em producao com:
+
+```powershell
+npm run deploy:prod
+```
+
+Tambem e possivel rodar QA sem publicar:
+
+```powershell
+npm run qa:homo
+npm run qa:prod
+```
+
+`qa:homo` usa `vercel curl` para acessar o deployment protegido. `qa:prod` usa
+HTTP publico normal contra `https://paddocke.vercel.app`.
+
+Enquanto o MVP estiver pequeno, homologacao e producao podem usar o mesmo
+Supabase. Antes de testes mais intensos com usuarios reais, o recomendado e
+criar um segundo projeto Supabase para homologacao e configurar as variaveis
+desse ambiente separadamente no Vercel.
+
 ## Recursos atuais
 
 - Tarefas nas categorias Pessoais / Estudos, Faculdade, Trabalho e Treino
@@ -75,6 +117,10 @@ chamada por um Cron do Supabase a cada minuto com o header `x-cron-secret`.
    - `Site URL`: `http://localhost:3000`
    - `Redirect URLs`: `http://localhost:3000/`
    - `Redirect URLs`: `http://localhost:3000/auth/callback`
+   - `Redirect URLs`: `https://homo-paddocke.vercel.app/`
+   - `Redirect URLs`: `https://homo-paddocke.vercel.app/auth/callback`
+   - `Redirect URLs`: `https://paddocke.vercel.app/`
+   - `Redirect URLs`: `https://paddocke.vercel.app/auth/callback`
 8. Para login com Google, va em `Authentication > Providers > Google` e copie a
    callback mostrada pelo Supabase, normalmente:
    `https://SEU-PROJETO.supabase.co/auth/v1/callback`.

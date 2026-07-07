@@ -1,7 +1,10 @@
 const fs = require("node:fs");
 const path = require("node:path");
 
-const BASE_URL = process.env.QA_BASE_URL || "https://paddocke.vercel.app";
+const baseUrlArg = process.argv.find((arg) => arg.startsWith("--base-url="));
+const localOnly = process.argv.includes("--local-only");
+const BASE_URL = (baseUrlArg ? baseUrlArg.split("=").slice(1).join("=") : process.env.QA_BASE_URL || "https://paddocke.vercel.app").replace(/\/+$/, "");
+const BASE_HOSTNAME = new URL(BASE_URL).hostname;
 const ROOT = path.resolve(__dirname, "..");
 
 function read(file) {
@@ -34,7 +37,7 @@ async function checkProductionShell() {
 async function checkRuntimeConfig() {
   const response = await fetchOk(`${BASE_URL}/api/config`);
   const config = await response.json();
-  const isProduction = BASE_URL.includes("paddocke.vercel.app");
+  const isProduction = BASE_HOSTNAME === "paddocke.vercel.app";
   if (isProduction) {
     assert(config.appUrl === "https://paddocke.vercel.app", "APP_URL should point to production");
   }
@@ -47,7 +50,7 @@ async function checkRuntimeConfig() {
 }
 
 async function checkGoogleOAuth(config) {
-  const callback = encodeURIComponent("https://paddocke.vercel.app/auth/callback");
+  const callback = encodeURIComponent(`${BASE_URL}/auth/callback`);
   const url = `${config.supabaseUrl}/auth/v1/authorize?provider=google&redirect_to=${callback}`;
   const response = await fetch(url, {
     headers: { apikey: config.supabaseAnonKey },
@@ -110,6 +113,7 @@ async function checkRankAssets() {
 
 function checkSecurityInvariants() {
   const app = read("public/app.js");
+  const packageJson = read("package.json");
   const server = read("server.js");
   const serverConfig = read("server/config.js");
   const serverApi = read("server/api.js");
@@ -131,6 +135,12 @@ function checkSecurityInvariants() {
   assert(app.includes('.eq("user_id", currentUser.id)'), "Tasks should be read by current user");
   assert(app.includes("user_id: currentUser.id"), "Tasks should be written with current user_id");
   assert(app.includes('from "./js/domain/time.js"'), "Task time normalization should live in a domain module");
+  assert(app.includes('from "./js/domain/state-store.js"'), "State persistence should live in a domain module");
+  assert(app.includes("window.location.origin"), "Auth callbacks should use the current environment origin");
+  assert(packageJson.includes('"deploy:homo"'), "Homologation deploy script should exist");
+  assert(packageJson.includes('"deploy:prod"'), "Production deploy script should exist");
+  assert(packageJson.includes('"qa:homo"'), "Homologation QA script should exist");
+  assert(packageJson.includes('"qa:prod"'), "Production QA script should exist");
   assert(!app.includes("[data-waitlist]"), "Plan waitlist handler should not exist in MVP");
   assert(!plansMarkup.includes("data-waitlist"), "Plan waitlist buttons should not exist in MVP");
   assert(!plansMarkup.includes(">Teams<"), "Teams plan should stay out of the MVP plan screen");
@@ -149,6 +159,11 @@ function checkSecurityInvariants() {
 
 async function main() {
   const results = [];
+  if (localOnly) {
+    results.push(checkSecurityInvariants());
+    console.table(results.map((result) => ({ check: result })));
+    return;
+  }
   results.push(await checkProductionShell());
   const config = await checkRuntimeConfig();
   results.push("runtime config ok");

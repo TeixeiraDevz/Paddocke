@@ -7,6 +7,10 @@
     "start": "node server.js",
     "dev": "node --watch server.js",
     "qa:mvp": "node scripts/qa-mvp.js",
+    "qa:homo": "node scripts/qa-homo.js",
+    "qa:prod": "node scripts/qa-mvp.js --base-url=https://paddocke.vercel.app",
+    "deploy:homo": "node scripts/deploy-vercel-env.js homo",
+    "deploy:prod": "node scripts/deploy-vercel-env.js prod",
     "stop": "node scripts/stop-port.js 3000",
     "supabase:functions:list": "npx supabase functions list --project-ref egdltobtsldomxzlzhnt",
     "supabase:functions:deploy:email": "npx supabase functions deploy daily-task-email --project-ref egdltobtsldomxzlzhnt --no-verify-jwt"
