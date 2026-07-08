@@ -37,16 +37,44 @@ const MIME_TYPES = {
   ".webmanifest": "application/manifest+json"
 };
 
-function getPublicConfig() {
+function getRequestHost(request) {
+  return String(request?.headers?.host || process.env.VERCEL_URL || "").split(":")[0].toLowerCase();
+}
+
+function getRuntimeEnvironment(request) {
+  const host = getRequestHost(request);
+  if (host === "homo-paddocke.vercel.app" || host.startsWith("homo-")) return "homo";
+  return "prod";
+}
+
+function getSupabaseSettings(request) {
+  const environment = getRuntimeEnvironment(request);
+  if (environment === "homo" && process.env.SUPABASE_HOMO_URL && process.env.SUPABASE_HOMO_ANON_KEY) {
+    return {
+      environment,
+      supabaseUrl: process.env.SUPABASE_HOMO_URL,
+      supabaseAnonKey: process.env.SUPABASE_HOMO_ANON_KEY
+    };
+  }
+  return {
+    environment,
+    supabaseUrl: process.env.SUPABASE_URL || "",
+    supabaseAnonKey: process.env.SUPABASE_ANON_KEY || ""
+  };
+}
+
+function getPublicConfig(request) {
   const productionUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
     ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
     : "";
+  const supabase = getSupabaseSettings(request);
   return {
     aiConfigured: Boolean(process.env.OPENAI_API_KEY),
     emailConfigured: Boolean(process.env.RESEND_API_KEY),
     appUrl: process.env.APP_URL || process.env.PUBLIC_APP_URL || productionUrl,
-    supabaseUrl: process.env.SUPABASE_URL || "",
-    supabaseAnonKey: process.env.SUPABASE_ANON_KEY || "",
+    supabaseEnvironment: supabase.environment,
+    supabaseUrl: supabase.supabaseUrl,
+    supabaseAnonKey: supabase.supabaseAnonKey,
     adminEmails: process.env.PADDOCKE_ADMIN_EMAILS || process.env.ADMIN_EMAILS || ""
   };
 }
@@ -58,5 +86,7 @@ module.exports = {
   PREFERENCES_FILE,
   PUBLIC_DIR,
   ROOT_DIR,
-  getPublicConfig
+  getPublicConfig,
+  getRuntimeEnvironment,
+  getSupabaseSettings
 };

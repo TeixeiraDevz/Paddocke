@@ -62,8 +62,8 @@ async function checkGoogleOAuth(config) {
   return "google oauth ok";
 }
 
-async function checkAssistantCommand() {
-  const taskResponse = await fetchOk(`${BASE_URL}/api/assistant`, {
+async function checkProtectedApiEndpoints() {
+  const assistantResponse = await fetch(`${BASE_URL}/api/assistant`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -74,22 +74,23 @@ async function checkAssistantCommand() {
       ]
     })
   });
-  const taskResult = await taskResponse.json();
-  assert(taskResult.reply && taskResult.reply.includes("Consulta medica"), "Assistant should answer today task queries");
+  assert(assistantResponse.status === 401, "Assistant endpoint should require an authenticated Supabase session");
 
-  const conceptResponse = await fetchOk(`${BASE_URL}/api/assistant`, {
+  const preferencesResponse = await fetch(`${BASE_URL}/api/notifications/preferences`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      command: "o que significa pomodoro",
-      today: "2026-07-03",
-      tasks: []
-    })
+    body: JSON.stringify({ enabled: true, email: "qa@example.com", time: "07:00", tasks: [] })
   });
-  const conceptResult = await conceptResponse.json();
-  assert(conceptResult.reply && conceptResult.reply.toLowerCase().includes("tecnica de foco"), "Assistant should explain Pomodoro");
-  assert(!conceptResult.reply.toLowerCase().includes("patente kwita"), "Pomodoro explanation should not answer profile rank");
-  return "assistant command ok";
+  assert(preferencesResponse.status === 401, "Notification preferences endpoint should require an authenticated Supabase session");
+
+  const notificationTestResponse = await fetch(`${BASE_URL}/api/notifications/test`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: "qa@example.com", tasks: [] })
+  });
+  assert(notificationTestResponse.status === 401, "Notification test endpoint should require an authenticated Supabase session");
+
+  return "protected API auth guards ok";
 }
 
 async function checkRankAssets() {
@@ -125,10 +126,14 @@ function checkSecurityInvariants() {
   const gitIgnore = read(".gitignore");
 
   assert(server.includes('require("./server/api")'), "Server entrypoint should use modular API router");
+  assert(serverApi.includes('require("./auth")'), "Sensitive API routes should validate Supabase JWTs");
+  assert(serverApi.includes("requireAuthenticatedUser(request, response)"), "Sensitive API routes should require an authenticated user");
   assert(serverApi.includes("rateLimit(request, response"), "Sensitive API routes should use rate limiting");
   assert(serverHttp.includes("X-Content-Type-Options"), "JSON responses should include security headers");
   assert(serverStatic.includes("securityHeaders()"), "Static responses should include security headers");
   assert(serverConfig.includes('if (process.env.VERCEL) return;'), "Vercel should not load local .env");
+  assert(serverConfig.includes("SUPABASE_HOMO_URL"), "Homologation should support a separate Supabase URL");
+  assert(serverConfig.includes("SUPABASE_HOMO_ANON_KEY"), "Homologation should support a separate Supabase anon key");
   assert(serverConfig.includes('".webp": "image/webp"'), "Server should serve WebP with correct MIME type");
   assert(vercelIgnore.includes(".env"), ".vercelignore should exclude .env");
   assert(gitIgnore.includes(".env"), ".gitignore should exclude .env");
@@ -168,7 +173,7 @@ async function main() {
   const config = await checkRuntimeConfig();
   results.push("runtime config ok");
   results.push(await checkGoogleOAuth(config));
-  results.push(await checkAssistantCommand());
+  results.push(await checkProtectedApiEndpoints());
   results.push(await checkRankAssets());
   results.push(checkSecurityInvariants());
   console.table(results.map((result) => ({ check: result })));

@@ -1,4 +1,5 @@
 const { createAiResponse } = require("./assistant");
+const { requireAuthenticatedUser } = require("./auth");
 const { getPublicConfig } = require("./config");
 const { readJsonBody, sendJson } = require("./http");
 const { saveNotificationPreferences, sendDailyDigest } = require("./notifications");
@@ -6,12 +7,14 @@ const { rateLimit } = require("./rate-limit");
 
 async function handleApi(request, response, pathname) {
   if (request.method === "GET" && pathname === "/api/config") {
-    sendJson(response, 200, getPublicConfig());
+    sendJson(response, 200, getPublicConfig(request));
     return true;
   }
 
   if (request.method === "POST" && pathname === "/api/assistant") {
     if (rateLimit(request, response, { key: "assistant", max: 20, windowMs: 60_000 })) return true;
+    const user = await requireAuthenticatedUser(request, response);
+    if (!user) return true;
     try {
       const body = await readJsonBody(request);
       const result = await createAiResponse(body);
@@ -25,6 +28,8 @@ async function handleApi(request, response, pathname) {
 
   if (request.method === "POST" && pathname === "/api/notifications/preferences") {
     if (rateLimit(request, response, { key: "notification-preferences", max: 30, windowMs: 60_000 })) return true;
+    const user = await requireAuthenticatedUser(request, response);
+    if (!user) return true;
     try {
       const body = await readJsonBody(request);
       const result = saveNotificationPreferences(body);
@@ -37,6 +42,8 @@ async function handleApi(request, response, pathname) {
 
   if (request.method === "POST" && pathname === "/api/notifications/test") {
     if (rateLimit(request, response, { key: "notification-test", max: 5, windowMs: 10 * 60_000 })) return true;
+    const user = await requireAuthenticatedUser(request, response);
+    if (!user) return true;
     try {
       if (!process.env.RESEND_API_KEY) {
         sendJson(response, 503, { sent: false, error: "RESEND_API_KEY nao configurada" });

@@ -623,6 +623,15 @@ async function loadSupabaseClient(config) {
   }
 }
 
+async function getAuthenticatedApiHeaders(extraHeaders = {}) {
+  const headers = { ...extraHeaders };
+  if (!supabaseClient) return headers;
+  const { data } = await supabaseClient.auth.getSession();
+  const token = data.session?.access_token;
+  if (token) headers.Authorization = `Bearer ${token}`;
+  return headers;
+}
+
 async function submitAuth(event) {
   event.preventDefault();
   if (!supabaseClient) {
@@ -1619,7 +1628,7 @@ async function syncNotificationData() {
   try {
     const response = await fetch("/api/notifications/preferences", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: await getAuthenticatedApiHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({
         ...preferences,
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -1735,7 +1744,7 @@ async function sendTestNotificationEmail() {
   try {
     const response = await fetch("/api/notifications/test", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: await getAuthenticatedApiHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({
         email,
         includeCompleted,
@@ -2340,7 +2349,7 @@ async function processAssistantCommand(rawCommand, fromVoice = false) {
   try {
     const response = await fetch("/api/assistant", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: await getAuthenticatedApiHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({
         command,
         today: localDateKey(),

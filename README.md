@@ -53,7 +53,16 @@ HTTP publico normal contra `https://paddocke.vercel.app`.
 Enquanto o MVP estiver pequeno, homologacao e producao podem usar o mesmo
 Supabase. Antes de testes mais intensos com usuarios reais, o recomendado e
 criar um segundo projeto Supabase para homologacao e configurar as variaveis
-desse ambiente separadamente no Vercel.
+desse ambiente separadamente no Vercel:
+
+```env
+SUPABASE_HOMO_URL=https://seu-projeto-homo.supabase.co
+SUPABASE_HOMO_ANON_KEY=sua-chave-publica-homo
+```
+
+Quando `homo-paddocke.vercel.app` recebe essas variaveis, `/api/config` entrega
+o Supabase de homologacao para o navegador. Producao continua usando
+`SUPABASE_URL` e `SUPABASE_ANON_KEY`.
 
 ## Recursos atuais
 
@@ -92,6 +101,8 @@ Crie um arquivo `.env` a partir de `.env.example` e informe as chaves desejadas:
 - `EMAIL_FROM`: remetente validado no Resend.
 - `SUPABASE_URL`: URL publica do projeto Supabase.
 - `SUPABASE_ANON_KEY`: chave anon/publica do projeto Supabase.
+- `SUPABASE_HOMO_URL`: opcional, URL publica do Supabase de homologacao.
+- `SUPABASE_HOMO_ANON_KEY`: opcional, chave anon/publica de homologacao.
 
 Sem essas chaves, tarefas, voz, Pomodoro e interpretacao local continuam
 funcionando. Sem Supabase, o app usa `localStorage`.
@@ -147,6 +158,10 @@ on conflict do nothing;
 
 No primeiro login real, se o usuario ainda nao tiver tarefas no Supabase, o app
 migra uma vez as tarefas locais do navegador para a conta autenticada.
+
+As APIs sensiveis do servidor, como assistente e notificacoes, exigem uma sessao
+Supabase valida via `Authorization: Bearer <access_token>`. Isso reduz abuso de
+IA/e-mail e evita processar dados privados de usuarios anonimos.
 
 ## OpenAI
 
