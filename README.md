@@ -50,10 +50,8 @@ npm run qa:prod
 `qa:homo` usa `vercel curl` para acessar o deployment protegido. `qa:prod` usa
 HTTP publico normal contra `https://paddocke.vercel.app`.
 
-Enquanto o MVP estiver pequeno, homologacao e producao podem usar o mesmo
-Supabase. Antes de testes mais intensos com usuarios reais, o recomendado e
-criar um segundo projeto Supabase para homologacao e configurar as variaveis
-desse ambiente separadamente no Vercel:
+Homologacao e producao devem usar projetos Supabase separados. Para um ambiente
+de homologacao novo, configure as variaveis abaixo no Vercel:
 
 ```env
 SUPABASE_HOMO_URL=https://seu-projeto-homo.supabase.co
@@ -63,6 +61,16 @@ SUPABASE_HOMO_ANON_KEY=sua-chave-publica-homo
 Quando `homo-paddocke.vercel.app` recebe essas variaveis, `/api/config` entrega
 o Supabase de homologacao para o navegador. Producao continua usando
 `SUPABASE_URL` e `SUPABASE_ANON_KEY`.
+
+## Banco de dados
+
+O arquivo `supabase/schema.sql` mantem uma referencia consolidada do schema
+atual. Para aplicar ou recriar um ambiente, use os arquivos de
+`supabase/migrations/` em ordem crescente. Eles separam extensoes, tabelas,
+seguranca admin, trigger de perfil, RLS e seed do e-mail admin.
+
+O SQL de cron de e-mail fica separado em `supabase/cron-daily-task-email.sql`
+porque depende de Vault, Edge Function e segredo de cron.
 
 ## Recursos atuais
 
