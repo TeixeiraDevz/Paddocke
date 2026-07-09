@@ -1469,6 +1469,7 @@ textarea:focus-visible {
   width: max-content;
   margin: 0;
   border-radius: 16px;
+  justify-self: end;
 }
 
 .sidebar-assistant.floating-assistant.is-collapsed {
