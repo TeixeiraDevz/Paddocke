@@ -731,6 +731,7 @@ textarea:focus-visible {
 }
 
 .dashboard-grid {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 330px;
   gap: 20px;
@@ -745,9 +746,15 @@ textarea:focus-visible {
 }
 
 @media (min-width: 921px) {
-  .main-column,
   .right-column {
     margin-top: -118px;
+  }
+
+  .main-column .home-assistant.floating-assistant.is-collapsed {
+    position: absolute;
+    top: -118px;
+    right: 350px;
+    z-index: 8;
   }
 }
 

@@ -672,7 +672,11 @@ async function loadBillingStatus() {
     const response = await fetch("/api/billing/status", {
       headers: await getAuthenticatedApiHeaders()
     });
-    if (!response.ok) return;
+    if (!response.ok) {
+      billingStatus = { plan: "free", status: "inactive" };
+      renderBillingStatus();
+      return;
+    }
     billingStatus = await response.json();
     renderBillingStatus();
   } catch (error) {

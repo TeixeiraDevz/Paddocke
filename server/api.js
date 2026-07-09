@@ -46,6 +46,10 @@ async function handleApi(request, response, pathname) {
       const result = await getBillingStatus({ request, user });
       sendJson(response, 200, result);
     } catch (error) {
+      if (String(error.message || "").includes("Supabase service role nao configurado")) {
+        sendJson(response, 200, { plan: "free", provider: "mercado_pago", status: "inactive", checkoutUrl: "" });
+        return true;
+      }
       console.error("Falha ao consultar billing:", error.message);
       sendJson(response, error.status || 503, { error: "Billing indisponivel no momento" });
     }
