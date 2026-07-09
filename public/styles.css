@@ -745,8 +745,9 @@ textarea:focus-visible {
 }
 
 @media (min-width: 921px) {
+  .main-column,
   .right-column {
-    margin-top: -148px;
+    margin-top: -118px;
   }
 }
 
