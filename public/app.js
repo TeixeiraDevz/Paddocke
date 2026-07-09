@@ -2481,10 +2481,9 @@ function syncAssistantPlacement({ preserveState = true } = {}) {
   }
 
   const isMobile = window.matchMedia("(max-width: 650px)").matches;
-  const isOpen = !card.classList.contains("is-collapsed");
-  const shouldFloat = isMobile || isOpen;
+  const shouldFloat = isMobile;
   card.classList.toggle("mobile-assistant-float", isMobile);
-  card.classList.toggle("desktop-assistant-panel", !isMobile && isOpen);
+  card.classList.remove("desktop-assistant-panel");
 
   if (shouldFloat && card.parentElement !== document.body) {
     document.body.append(card);
@@ -2878,7 +2877,7 @@ function bindEvents() {
   document.querySelector("#calendar-clear-selected-day").addEventListener("click", clearSelectedCalendarDay);
   document.querySelector("#calendar-day-task-list").addEventListener("click", handleCalendarTaskAction);
 
-  document.querySelector("#open-calendar-button").addEventListener("click", () => showView("calendar"));
+  document.querySelector("#open-calendar-button")?.addEventListener("click", () => showView("calendar"));
   document.querySelector("#hero-focus-button").addEventListener("click", () => {
     showView("focus");
   });

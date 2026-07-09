@@ -224,44 +224,6 @@
           </button>
         </div>
 
-        <section class="assistant-card glass-card floating-assistant sidebar-assistant is-collapsed" id="assistant-card">
-          <div class="assistant-heading">
-            <button class="ai-avatar assistant-companion" id="assistant-float-toggle" type="button" aria-label="Abrir assistente de voz Paddocke" aria-expanded="false">
-              <span data-icon="sparkles"></span>
-            </button>
-            <div>
-              <span class="section-kicker">ASSISTENTE PADDOCKE</span>
-              <h3>Como posso ajudar</h3>
-            </div>
-            <i class="online-dot"></i>
-          </div>
-          <div class="assistant-message" id="assistant-message">
-            Toque no microfone e diga: "Quais sao minhas tarefas de hoje"
-          </div>
-          <form class="assistant-input" id="assistant-command-form">
-            <input
-              id="assistant-command-input"
-              type="text"
-              autocomplete="off"
-              placeholder="Digite um comando..."
-              aria-label="Digite um comando para o assistente"
-            />
-            <button type="submit" aria-label="Enviar comando">
-              <span data-icon="arrow-up"></span>
-            </button>
-          </form>
-          <div class="assistant-voice">
-            <button type="button" id="voice-button" aria-label="Falar com o assistente">
-              <span data-icon="mic"></span>
-              <span class="voice-button-copy">
-                <strong>Falar com o Paddocke</strong>
-                <small>Toque e diga seu comando</small>
-              </span>
-            </button>
-          </div>
-          <p class="voice-status" id="voice-status"></p>
-        </section>
-
         <div class="sidebar-profile">
           <div class="avatar" id="profile-avatar">NB<span class="status-dot"></span></div>
           <div class="profile-copy">
@@ -315,10 +277,6 @@
                   Vamos transformar seus planos em progresso.
                 </p>
               </div>
-              <button class="ghost-button" id="open-calendar-button">
-                <span data-icon="calendar"></span>
-                Ver calendário
-              </button>
             </div>
 
             <div class="dashboard-grid">
@@ -409,6 +367,44 @@
                     <span><i></i> <b id="calendar-events-count">0 eventos</b> neste mes</span>
                     <button id="google-calendar-button">Fazer Download Calendario</button>
                   </div>
+                </section>
+
+                <section class="assistant-card glass-card floating-assistant home-assistant is-collapsed" id="assistant-card">
+                  <div class="assistant-heading">
+                    <button class="ai-avatar assistant-companion" id="assistant-float-toggle" type="button" aria-label="Abrir assistente de voz Paddocke" aria-expanded="false">
+                      <span data-icon="sparkles"></span>
+                    </button>
+                    <div>
+                      <span class="section-kicker">ASSISTENTE PADDOCKE</span>
+                      <h3>Como posso ajudar</h3>
+                    </div>
+                    <i class="online-dot"></i>
+                  </div>
+                  <div class="assistant-message" id="assistant-message">
+                    Toque no microfone e diga: "Quais sao minhas tarefas de hoje"
+                  </div>
+                  <form class="assistant-input" id="assistant-command-form">
+                    <input
+                      id="assistant-command-input"
+                      type="text"
+                      autocomplete="off"
+                      placeholder="Digite um comando..."
+                      aria-label="Digite um comando para o assistente"
+                    />
+                    <button type="submit" aria-label="Enviar comando">
+                      <span data-icon="arrow-up"></span>
+                    </button>
+                  </form>
+                  <div class="assistant-voice">
+                    <button type="button" id="voice-button" aria-label="Falar com o assistente">
+                      <span data-icon="mic"></span>
+                      <span class="voice-button-copy">
+                        <strong>Falar com o Paddocke</strong>
+                        <small>Toque e diga seu comando</small>
+                      </span>
+                    </button>
+                  </div>
+                  <p class="voice-status" id="voice-status"></p>
                 </section>
               </aside>
             </div>

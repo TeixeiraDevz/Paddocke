@@ -679,7 +679,7 @@ textarea:focus-visible {
 .page-container {
   max-width: 1520px;
   margin: 0 auto;
-  padding: 34px 35px 50px;
+  padding: 24px 35px 50px;
 }
 
 .view {
@@ -702,7 +702,7 @@ textarea:focus-visible {
   align-items: flex-end;
   justify-content: space-between;
   gap: 28px;
-  margin-bottom: 28px;
+  margin-bottom: 16px;
 }
 
 .eyebrow,
@@ -733,14 +733,14 @@ textarea:focus-visible {
 .dashboard-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 330px;
-  gap: 22px;
+  gap: 20px;
 }
 
 .main-column,
 .right-column {
   display: grid;
   align-content: start;
-  gap: 20px;
+  gap: 14px;
   min-width: 0;
 }
 
@@ -1079,7 +1079,7 @@ textarea:focus-visible {
 }
 
 .progress-card {
-  padding: 19px;
+  padding: 16px;
 }
 
 .progress-card .card-title-row {
@@ -1143,7 +1143,7 @@ textarea:focus-visible {
 }
 
 .level-progress {
-  margin-top: 10px;
+  margin-top: 8px;
 }
 
 .level-bar {
@@ -1176,8 +1176,8 @@ textarea:focus-visible {
   grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 10px;
-  margin-top: 16px;
-  padding-top: 14px;
+  margin-top: 13px;
+  padding-top: 12px;
   border-top: 1px solid var(--border);
 }
 
@@ -1218,7 +1218,7 @@ textarea:focus-visible {
 }
 
 .calendar-card {
-  padding: 19px;
+  padding: 16px;
 }
 
 .calendar-header {
@@ -1250,7 +1250,7 @@ textarea:focus-visible {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 4px;
-  margin-top: 16px;
+  margin-top: 12px;
   text-align: center;
 }
 
@@ -1458,12 +1458,26 @@ textarea:focus-visible {
   border-radius: 16px;
 }
 
+.home-assistant {
+  width: 100%;
+  margin: 0;
+  border-radius: 16px;
+}
+
 .sidebar-assistant.floating-assistant.is-collapsed {
   display: block;
   width: auto;
   min-height: 0;
   padding: 11px 12px;
   border-radius: 14px;
+  cursor: pointer;
+  background: linear-gradient(145deg, rgba(13, 27, 47, 0.78), rgba(8, 18, 31, 0.72));
+}
+
+.home-assistant.floating-assistant.is-collapsed {
+  display: block;
+  min-height: 0;
+  padding: 12px;
   cursor: pointer;
   background: linear-gradient(145deg, rgba(13, 27, 47, 0.78), rgba(8, 18, 31, 0.72));
 }
@@ -1476,23 +1490,36 @@ textarea:focus-visible {
   gap: 10px;
 }
 
+.home-assistant.floating-assistant.is-collapsed .assistant-heading {
+  display: flex;
+  width: 100%;
+  height: auto;
+  justify-content: flex-start;
+  gap: 10px;
+}
+
 .sidebar-assistant.floating-assistant.is-collapsed .assistant-heading > div,
-.sidebar-assistant.floating-assistant.is-collapsed .online-dot {
+.sidebar-assistant.floating-assistant.is-collapsed .online-dot,
+.home-assistant.floating-assistant.is-collapsed .assistant-heading > div,
+.home-assistant.floating-assistant.is-collapsed .online-dot {
   display: block;
 }
 
-.sidebar-assistant.floating-assistant.is-collapsed .assistant-heading h3 {
+.sidebar-assistant.floating-assistant.is-collapsed .assistant-heading h3,
+.home-assistant.floating-assistant.is-collapsed .assistant-heading h3 {
   margin-top: 2px;
   font-size: 11px;
 }
 
-.sidebar-assistant.floating-assistant.is-collapsed .assistant-companion {
+.sidebar-assistant.floating-assistant.is-collapsed .assistant-companion,
+.home-assistant.floating-assistant.is-collapsed .assistant-companion {
   width: 34px;
   height: 34px;
   border-radius: 12px;
 }
 
-.sidebar-assistant.floating-assistant.is-collapsed .assistant-companion svg {
+.sidebar-assistant.floating-assistant.is-collapsed .assistant-companion svg,
+.home-assistant.floating-assistant.is-collapsed .assistant-companion svg {
   width: 18px;
   height: 18px;
 }
@@ -3825,21 +3852,25 @@ button.ai-avatar {
   background: #f5f9ff;
 }
 
-[data-theme="light"] .sidebar-assistant.floating-assistant.is-collapsed {
+[data-theme="light"] .sidebar-assistant.floating-assistant.is-collapsed,
+[data-theme="light"] .home-assistant.floating-assistant.is-collapsed {
   border-color: #d2e2f3;
   background: linear-gradient(145deg, rgba(246, 250, 255, 0.96), rgba(229, 240, 253, 0.92));
   box-shadow: 0 18px 42px rgba(55, 95, 143, 0.12);
 }
 
-[data-theme="light"] .sidebar-assistant.floating-assistant.is-collapsed .assistant-heading h3 {
+[data-theme="light"] .sidebar-assistant.floating-assistant.is-collapsed .assistant-heading h3,
+[data-theme="light"] .home-assistant.floating-assistant.is-collapsed .assistant-heading h3 {
   color: #173a68;
 }
 
-[data-theme="light"] .sidebar-assistant.floating-assistant.is-collapsed .section-kicker {
+[data-theme="light"] .sidebar-assistant.floating-assistant.is-collapsed .section-kicker,
+[data-theme="light"] .home-assistant.floating-assistant.is-collapsed .section-kicker {
   color: #5d7592;
 }
 
-[data-theme="light"] .sidebar-assistant.floating-assistant.is-collapsed .assistant-companion {
+[data-theme="light"] .sidebar-assistant.floating-assistant.is-collapsed .assistant-companion,
+[data-theme="light"] .home-assistant.floating-assistant.is-collapsed .assistant-companion {
   border-color: rgba(47, 134, 255, 0.32);
   color: #ffffff;
   background:
