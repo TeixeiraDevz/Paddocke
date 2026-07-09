@@ -55,6 +55,7 @@ let assistantAnchor = null;
 let assistantRecognition = null;
 let assistantRecognitionStopExpected = false;
 let assistantVoiceCooldownUntil = 0;
+let assistantDrag = null;
 
 const pomodoro = {
   mode: "focus",
@@ -2481,20 +2482,99 @@ function syncAssistantPlacement({ preserveState = true } = {}) {
   }
 
   const isMobile = window.matchMedia("(max-width: 650px)").matches;
-  const shouldFloat = isMobile;
+  const isOpen = !card.classList.contains("is-collapsed");
+  const shouldFloat = isMobile || (!isMobile && isOpen);
   card.classList.toggle("mobile-assistant-float", isMobile);
-  card.classList.remove("desktop-assistant-panel");
+  card.classList.toggle("desktop-assistant-panel", !isMobile && isOpen);
 
   if (shouldFloat && card.parentElement !== document.body) {
     document.body.append(card);
+    if (!isMobile && isOpen) placeAssistantPanel();
     if (!preserveState) setAssistantCollapsed(true);
     return;
   }
 
   if (!shouldFloat && card.parentElement === document.body && assistantAnchor?.parentNode) {
     assistantAnchor.parentNode.insertBefore(card, assistantAnchor.nextSibling);
+    clearAssistantPanelPosition();
     if (!preserveState) setAssistantCollapsed(true);
+    return;
   }
+
+  if (!isMobile && isOpen) placeAssistantPanel();
+}
+
+function clampAssistantPanelPosition(left, top) {
+  const card = document.querySelector("#assistant-card");
+  if (!card) return { left, top };
+  const margin = 12;
+  const rect = card.getBoundingClientRect();
+  const maxLeft = Math.max(margin, window.innerWidth - rect.width - margin);
+  const maxTop = Math.max(margin, window.innerHeight - rect.height - margin);
+  return {
+    left: Math.min(Math.max(left, margin), maxLeft),
+    top: Math.min(Math.max(top, margin), maxTop)
+  };
+}
+
+function setAssistantPanelPosition(left, top) {
+  const card = document.querySelector("#assistant-card");
+  if (!card) return;
+  const position = clampAssistantPanelPosition(left, top);
+  card.style.left = `${position.left}px`;
+  card.style.top = `${position.top}px`;
+  card.style.right = "auto";
+  card.style.bottom = "auto";
+}
+
+function clearAssistantPanelPosition() {
+  const card = document.querySelector("#assistant-card");
+  if (!card) return;
+  card.style.left = "";
+  card.style.top = "";
+  card.style.right = "";
+  card.style.bottom = "";
+}
+
+function placeAssistantPanel() {
+  const card = document.querySelector("#assistant-card");
+  if (!card || !card.classList.contains("desktop-assistant-panel")) return;
+  if (card.style.left && card.style.top) {
+    setAssistantPanelPosition(parseFloat(card.style.left), parseFloat(card.style.top));
+    return;
+  }
+  const anchorRect = assistantAnchor?.parentNode ? assistantAnchor.parentNode.getBoundingClientRect() : null;
+  const left = anchorRect ? anchorRect.left : Math.max(300, window.innerWidth * 0.22);
+  const top = anchorRect ? Math.max(96, anchorRect.top) : 110;
+  window.requestAnimationFrame(() => setAssistantPanelPosition(left, top));
+}
+
+function beginAssistantDrag(event) {
+  const card = document.querySelector("#assistant-card");
+  if (!card || !card.classList.contains("desktop-assistant-panel")) return;
+  if (!event.target.closest(".assistant-heading")) return;
+  if (event.target.closest("button, input, textarea, select")) return;
+  const rect = card.getBoundingClientRect();
+  assistantDrag = {
+    pointerId: event.pointerId,
+    offsetX: event.clientX - rect.left,
+    offsetY: event.clientY - rect.top
+  };
+  card.classList.add("is-dragging");
+  card.setPointerCapture(event.pointerId);
+}
+
+function moveAssistantDrag(event) {
+  if (!assistantDrag || event.pointerId !== assistantDrag.pointerId) return;
+  event.preventDefault();
+  setAssistantPanelPosition(event.clientX - assistantDrag.offsetX, event.clientY - assistantDrag.offsetY);
+}
+
+function endAssistantDrag(event) {
+  if (!assistantDrag || event.pointerId !== assistantDrag.pointerId) return;
+  const card = document.querySelector("#assistant-card");
+  card?.classList.remove("is-dragging");
+  assistantDrag = null;
 }
 
 function setVoiceButtonListening(listening) {
@@ -2918,6 +2998,10 @@ function bindEvents() {
     if (!event.currentTarget.classList.contains("is-collapsed")) return;
     setAssistantCollapsed(false, { startVoice: true });
   });
+  document.querySelector("#assistant-card").addEventListener("pointerdown", beginAssistantDrag);
+  document.querySelector("#assistant-card").addEventListener("pointermove", moveAssistantDrag);
+  document.querySelector("#assistant-card").addEventListener("pointerup", endAssistantDrag);
+  document.querySelector("#assistant-card").addEventListener("pointercancel", endAssistantDrag);
   document.addEventListener("pointerdown", closeAssistantOnOutsidePointer);
   document.querySelector("#theme-toggle").addEventListener("click", () => {
     applyTheme(state.theme === "dark" ? "light" : "dark");

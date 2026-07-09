@@ -1466,7 +1466,7 @@ textarea:focus-visible {
 }
 
 .home-assistant {
-  width: 100%;
+  width: max-content;
   margin: 0;
   border-radius: 16px;
 }
@@ -1483,8 +1483,10 @@ textarea:focus-visible {
 
 .home-assistant.floating-assistant.is-collapsed {
   display: block;
+  width: 62px;
+  height: 62px;
   min-height: 0;
-  padding: 12px;
+  padding: 8px;
   cursor: pointer;
   background: linear-gradient(145deg, rgba(13, 27, 47, 0.78), rgba(8, 18, 31, 0.72));
 }
@@ -1498,17 +1500,14 @@ textarea:focus-visible {
 }
 
 .home-assistant.floating-assistant.is-collapsed .assistant-heading {
-  display: flex;
+  display: grid;
   width: 100%;
-  height: auto;
-  justify-content: flex-start;
-  gap: 10px;
+  height: 100%;
+  place-items: center;
 }
 
 .sidebar-assistant.floating-assistant.is-collapsed .assistant-heading > div,
-.sidebar-assistant.floating-assistant.is-collapsed .online-dot,
-.home-assistant.floating-assistant.is-collapsed .assistant-heading > div,
-.home-assistant.floating-assistant.is-collapsed .online-dot {
+.sidebar-assistant.floating-assistant.is-collapsed .online-dot {
   display: block;
 }
 
@@ -1518,30 +1517,37 @@ textarea:focus-visible {
   font-size: 11px;
 }
 
-.sidebar-assistant.floating-assistant.is-collapsed .assistant-companion,
-.home-assistant.floating-assistant.is-collapsed .assistant-companion {
+.sidebar-assistant.floating-assistant.is-collapsed .assistant-companion {
   width: 34px;
   height: 34px;
   border-radius: 12px;
 }
 
-.sidebar-assistant.floating-assistant.is-collapsed .assistant-companion svg,
-.home-assistant.floating-assistant.is-collapsed .assistant-companion svg {
+.sidebar-assistant.floating-assistant.is-collapsed .assistant-companion svg {
   width: 18px;
   height: 18px;
 }
 
 .desktop-assistant-panel {
-  --assistant-panel-top: clamp(330px, 54vh, 468px);
   position: fixed;
-  top: var(--assistant-panel-top);
-  left: 283px;
+  top: 110px;
+  left: 354px;
   z-index: 82;
   width: min(430px, calc(100vw - 318px));
-  max-height: calc(100vh - var(--assistant-panel-top) - 24px);
+  max-height: calc(100vh - 24px);
   margin: 0;
   overflow: auto;
   border-radius: 22px;
+}
+
+.desktop-assistant-panel .assistant-heading {
+  cursor: grab;
+  touch-action: none;
+}
+
+.desktop-assistant-panel.is-dragging,
+.desktop-assistant-panel.is-dragging .assistant-heading {
+  cursor: grabbing;
 }
 
 .desktop-assistant-panel .assistant-message {
