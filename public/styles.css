@@ -2392,6 +2392,7 @@ button.ai-avatar {
 .profile-banner {
   position: relative;
   min-height: 210px;
+  cursor: pointer;
   background:
     linear-gradient(135deg, rgba(33, 132, 255, 0.82), rgba(12, 30, 55, 0.25)),
     radial-gradient(circle at 35% 20%, rgba(255, 255, 255, 0.42), transparent 18%),
@@ -2400,10 +2401,16 @@ button.ai-avatar {
   background-size: cover;
 }
 
+.profile-banner:focus-visible {
+  outline: 3px solid rgba(47, 134, 255, 0.5);
+  outline-offset: 4px;
+}
+
 .profile-edit-button {
   position: absolute;
   right: 18px;
   bottom: 18px;
+  z-index: 2;
   padding: 10px 14px;
   border: 1px solid rgba(255, 255, 255, 0.34);
   border-radius: 12px;
@@ -2434,7 +2441,7 @@ button.ai-avatar {
   width: 156px;
   height: 156px;
   place-items: center;
-  border: 8px solid rgba(255, 255, 255, 0.92);
+  border: 5px solid rgba(255, 255, 255, 0.92);
   border-radius: 50%;
   color: white;
   background: linear-gradient(145deg, #1f75f0, #0b2c60);
@@ -2448,11 +2455,11 @@ button.ai-avatar {
 
 .profile-camera {
   position: absolute;
-  right: 2px;
-  bottom: 12px;
+  right: -2px;
+  bottom: 10px;
   display: grid;
-  width: 46px;
-  height: 46px;
+  width: 38px;
+  height: 38px;
   place-items: center;
   border: 1px solid var(--border);
   border-radius: 50%;
@@ -2463,7 +2470,7 @@ button.ai-avatar {
 }
 
 .profile-camera svg {
-  width: 19px;
+  width: 16px;
 }
 
 .profile-main-copy {
@@ -3397,7 +3404,24 @@ button.ai-avatar {
   .profile-photo {
     width: 124px;
     height: 124px;
+    border-width: 4px;
     font-size: 34px;
+  }
+
+  .profile-edit-button {
+    top: 14px;
+    right: 14px;
+    bottom: auto;
+    padding: 9px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+  }
+
+  .profile-camera {
+    right: -4px;
+    bottom: 6px;
+    width: 36px;
+    height: 36px;
   }
 
   .profile-stats-grid {
@@ -4971,6 +4995,27 @@ body.auth-visible {
   .main-column,
   .right-column {
     gap: 16px;
+  }
+
+  .right-column {
+    grid-template-columns: 1fr;
+  }
+
+  .calendar-card {
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .calendar-footer {
+    flex-wrap: wrap;
+    gap: 8px 12px;
+  }
+
+  .calendar-footer button {
+    max-width: 100%;
+    white-space: normal;
+    text-align: left;
   }
 
   .focus-hero {

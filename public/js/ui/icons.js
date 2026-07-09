@@ -4,6 +4,7 @@ export const icons = {
   "book-open": '<path d="M12 7v14"/><path d="M3 6.8A2 2 0 0 1 5.2 5C7.4 5.2 9.3 6 12 7.5c2.7-1.5 4.6-2.3 6.8-2.5A2 2 0 0 1 21 6.8v11.6a2 2 0 0 1-2.2 2C16.6 20.2 14.7 19.4 12 18c-2.7 1.4-4.6 2.2-6.8 2.4A2 2 0 0 1 3 18.4Z"/>',
   briefcase: '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 12h18M10 12v2h4v-2"/>',
   calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/>',
+  camera: '<path d="M14.5 5 13 3H9L7.5 5H5a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-4.5Z"/><circle cx="12" cy="12.5" r="3.5"/>',
   check: '<path d="m5 12 4 4L19 6"/>',
   "chevron-left": '<path d="m15 18-6-6 6-6"/>',
   "chevron-right": '<path d="m9 18 6-6-6-6"/>',

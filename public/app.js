@@ -3041,6 +3041,15 @@ function bindEvents() {
   });
   document.querySelector("#edit-avatar-button").addEventListener("click", () => editProfileImage("avatar"));
   document.querySelector("#edit-banner-button").addEventListener("click", () => editProfileImage("banner"));
+  document.querySelector("#profile-banner").addEventListener("click", (event) => {
+    if (event.target.closest("button")) return;
+    editProfileImage("banner");
+  });
+  document.querySelector("#profile-banner").addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    editProfileImage("banner");
+  });
   document.querySelector("#avatar-file-input").addEventListener("change", (event) => handleProfileImageFile(event, "avatar"));
   document.querySelector("#banner-file-input").addEventListener("change", (event) => handleProfileImageFile(event, "banner"));
 
