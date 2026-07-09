@@ -1,4 +1,4 @@
-const { getSupabaseSettings } = require("./config");
+const { getAdminEmails, getSupabaseSettings } = require("./config");
 const { sendJson } = require("./http");
 
 function getBearerToken(request) {
@@ -33,7 +33,13 @@ async function requireAuthenticatedUser(request, response) {
   return null;
 }
 
+function isAdminUser(user) {
+  const email = String(user?.email || "").trim().toLowerCase();
+  return Boolean(email && getAdminEmails().includes(email));
+}
+
 module.exports = {
   getAuthenticatedUser,
+  isAdminUser,
   requireAuthenticatedUser
 };

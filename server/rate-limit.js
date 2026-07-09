@@ -1,4 +1,5 @@
 const buckets = new Map();
+const { securityHeaders } = require("./http");
 
 function getClientIp(request) {
   const forwardedFor = String(request.headers["x-forwarded-for"] || "").split(",")[0].trim();
@@ -25,7 +26,8 @@ function rateLimit(request, response, options = {}) {
   response.writeHead(429, {
     "Cache-Control": "no-store",
     "Content-Type": "application/json; charset=utf-8",
-    "Retry-After": String(Math.ceil((current.resetAt - now) / 1000))
+    "Retry-After": String(Math.ceil((current.resetAt - now) / 1000)),
+    ...securityHeaders()
   });
   response.end(JSON.stringify({
     error: "Muitas tentativas em pouco tempo. Aguarde alguns instantes e tente novamente."

@@ -1,5 +1,5 @@
 const { createAiResponse } = require("./assistant");
-const { requireAuthenticatedUser } = require("./auth");
+const { isAdminUser, requireAuthenticatedUser } = require("./auth");
 const { getPublicConfig } = require("./config");
 const { readJsonBody, sendJson } = require("./http");
 const { saveNotificationPreferences, sendDailyDigest } = require("./notifications");
@@ -8,6 +8,17 @@ const { rateLimit } = require("./rate-limit");
 async function handleApi(request, response, pathname) {
   if (request.method === "GET" && pathname === "/api/config") {
     sendJson(response, 200, getPublicConfig(request));
+    return true;
+  }
+
+  if (request.method === "GET" && pathname === "/api/session") {
+    if (rateLimit(request, response, { key: "session", max: 60, windowMs: 60_000 })) return true;
+    const user = await requireAuthenticatedUser(request, response);
+    if (!user) return true;
+    sendJson(response, 200, {
+      userId: user.id,
+      isAdmin: isAdminUser(user)
+    });
     return true;
   }
 

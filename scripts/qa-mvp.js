@@ -45,7 +45,7 @@ async function checkRuntimeConfig() {
   assert(config.emailConfigured === true, "Resend should be configured in production");
   assert(Boolean(config.supabaseUrl), "Supabase URL should be present");
   assert(Boolean(config.supabaseAnonKey), "Supabase anon key should be present");
-  if (isProduction) assert(Boolean(config.adminEmails), "Admin emails should be present");
+  assert(!("adminEmails" in config), "Runtime config should not expose admin emails");
   return config;
 }
 
@@ -90,6 +90,9 @@ async function checkProtectedApiEndpoints() {
   });
   assert(notificationTestResponse.status === 401, "Notification test endpoint should require an authenticated Supabase session");
 
+  const sessionResponse = await fetch(`${BASE_URL}/api/session`);
+  assert(sessionResponse.status === 401, "Session endpoint should require an authenticated Supabase session");
+
   return "protected API auth guards ok";
 }
 
@@ -128,7 +131,10 @@ function checkSecurityInvariants() {
   assert(server.includes('require("./server/api")'), "Server entrypoint should use modular API router");
   assert(serverApi.includes('require("./auth")'), "Sensitive API routes should validate Supabase JWTs");
   assert(serverApi.includes("requireAuthenticatedUser(request, response)"), "Sensitive API routes should require an authenticated user");
+  assert(serverApi.includes('pathname === "/api/session"'), "Session endpoint should provide authenticated user metadata");
   assert(serverApi.includes("rateLimit(request, response"), "Sensitive API routes should use rate limiting");
+  assert(!serverConfig.includes("adminEmails:"), "Public config should not expose admin email list");
+  assert(app.includes("currentUserIsAdmin"), "Client should use authenticated session metadata for admin state");
   assert(serverHttp.includes("X-Content-Type-Options"), "JSON responses should include security headers");
   assert(serverStatic.includes("securityHeaders()"), "Static responses should include security headers");
   assert(serverConfig.includes('if (process.env.VERCEL) return;'), "Vercel should not load local .env");

@@ -36,6 +36,7 @@ let authMode = "login";
 let supabaseClient = null;
 let runtimeConfig = {};
 let currentUser = null;
+let currentUserIsAdmin = false;
 let remoteUserLoadedId = "";
 let remoteSyncTimer = null;
 let remoteSyncing = false;
@@ -137,7 +138,6 @@ function getProfilePayload(user = currentUser) {
 function applyRemoteProfile(profile) {
   if (!profile) return;
   state.xp = Math.max(0, Number(profile.xp ?? state.xp));
-  if (!isAdminUser() && state.xp >= ADMIN_BASE_XP) state.xp = 0;
   applyAdminEntitlement();
   state.focusSessions = Number(profile.focus_sessions ?? state.focusSessions);
   state.streakRecord = Number(profile.streak_record ?? state.streakRecord);
@@ -331,19 +331,28 @@ function getAuthCallbackUrl() {
   return `${getAppUrl()}/auth/callback`;
 }
 
-function getAdminEmails() {
-  return String(runtimeConfig.adminEmails || "")
-    .split(",")
-    .map((email) => normalizeAuthEmail(email))
-    .filter(Boolean);
-}
-
 function isAdminUser(user = currentUser) {
-  return Boolean(user?.email && getAdminEmails().includes(normalizeAuthEmail(user.email)));
+  return Boolean(user && currentUser && user.id === currentUser.id && currentUserIsAdmin);
 }
 
 function applyAdminEntitlement(user = currentUser) {
   if (isAdminUser(user) && state.xp < ADMIN_BASE_XP) state.xp = ADMIN_BASE_XP;
+}
+
+async function refreshSessionInfo(user = currentUser) {
+  currentUserIsAdmin = false;
+  if (!user || !supabaseClient) return;
+  try {
+    const response = await fetch("/api/session", {
+      headers: await getAuthenticatedApiHeaders()
+    });
+    if (!response.ok) return;
+    const sessionInfo = await response.json();
+    currentUserIsAdmin = Boolean(sessionInfo.isAdmin);
+    applyAdminEntitlement(user);
+  } catch (error) {
+    console.warn("Falha ao carregar informacoes da sessao:", error.message);
+  }
 }
 
 function setAuthStatus(message = "", type = "") {
@@ -583,19 +592,20 @@ function updateUserInterface(user) {
 
 function showAuthScreen(message = "") {
   currentUser = null;
+  currentUserIsAdmin = false;
   document.querySelector("#app-shell").hidden = true;
   document.querySelector("#auth-shell").hidden = false;
   document.body.classList.add("auth-visible");
   if (message) setAuthStatus(message, "success");
 }
 
-function enterApp(user = null) {
+async function enterApp(user = null) {
   currentUser = user;
   if (user) {
     clearPendingSignup();
     sessionStorage.removeItem("paddocke-demo-session");
-    if (!isAdminUser(user) && state.xp >= ADMIN_BASE_XP) state.xp = 0;
   }
+  await refreshSessionInfo(user);
   applyAdminEntitlement(user);
   document.querySelector("#auth-shell").hidden = true;
   document.querySelector("#app-shell").hidden = false;
@@ -747,6 +757,7 @@ async function resetPassword() {
 async function logOut() {
   if (supabaseClient) await supabaseClient.auth.signOut();
   currentUser = null;
+  currentUserIsAdmin = false;
   remoteUserLoadedId = "";
   sessionStorage.removeItem("paddocke-demo-session");
   showAuthScreen("Você saiu da sua conta.");

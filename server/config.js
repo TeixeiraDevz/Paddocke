@@ -74,9 +74,15 @@ function getPublicConfig(request) {
     appUrl: process.env.APP_URL || process.env.PUBLIC_APP_URL || productionUrl,
     supabaseEnvironment: supabase.environment,
     supabaseUrl: supabase.supabaseUrl,
-    supabaseAnonKey: supabase.supabaseAnonKey,
-    adminEmails: process.env.PADDOCKE_ADMIN_EMAILS || process.env.ADMIN_EMAILS || ""
+    supabaseAnonKey: supabase.supabaseAnonKey
   };
+}
+
+function getAdminEmails() {
+  return String(process.env.PADDOCKE_ADMIN_EMAILS || process.env.ADMIN_EMAILS || "")
+    .split(",")
+    .map((email) => email.trim().toLowerCase())
+    .filter(Boolean);
 }
 
 module.exports = {
@@ -86,6 +92,7 @@ module.exports = {
   PREFERENCES_FILE,
   PUBLIC_DIR,
   ROOT_DIR,
+  getAdminEmails,
   getPublicConfig,
   getRuntimeEnvironment,
   getSupabaseSettings
