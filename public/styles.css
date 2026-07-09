@@ -744,6 +744,12 @@ textarea:focus-visible {
   min-width: 0;
 }
 
+@media (min-width: 921px) {
+  .right-column {
+    margin-top: -148px;
+  }
+}
+
 .glass-card {
   border: 1px solid var(--border);
   background: linear-gradient(145deg, rgba(13, 27, 47, 0.76), rgba(8, 18, 31, 0.68));
