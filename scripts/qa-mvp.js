@@ -122,6 +122,8 @@ function checkSecurityInvariants() {
   const serverConfig = read("server/config.js");
   const serverApi = read("server/api.js");
   const serverHttp = read("server/http.js");
+  const billing = read("server/billing/mercado-pago.js");
+  const billingMigration = read("supabase/migrations/20260709_0009_billing.sql");
   const serverStatic = read("server/static.js");
   const schema = read("supabase/schema.sql");
   const plansMarkup = read("public/index.html");
@@ -132,6 +134,8 @@ function checkSecurityInvariants() {
   assert(serverApi.includes('require("./auth")'), "Sensitive API routes should validate Supabase JWTs");
   assert(serverApi.includes("requireAuthenticatedUser(request, response)"), "Sensitive API routes should require an authenticated user");
   assert(serverApi.includes('pathname === "/api/session"'), "Session endpoint should provide authenticated user metadata");
+  assert(serverApi.includes('pathname === "/api/billing/checkout"'), "Billing checkout endpoint should exist");
+  assert(serverApi.includes('pathname === "/api/billing/webhook/mercadopago"'), "Mercado Pago webhook endpoint should exist");
   assert(serverApi.includes("rateLimit(request, response"), "Sensitive API routes should use rate limiting");
   assert(!serverConfig.includes("adminEmails:"), "Public config should not expose admin email list");
   assert(app.includes("currentUserIsAdmin"), "Client should use authenticated session metadata for admin state");
@@ -156,8 +160,13 @@ function checkSecurityInvariants() {
   assert(!plansMarkup.includes("data-waitlist"), "Plan waitlist buttons should not exist in MVP");
   assert(!plansMarkup.includes(">Teams<"), "Teams plan should stay out of the MVP plan screen");
   assert(plansMarkup.includes("ATIVO NO MVP"), "Plans screen should identify the active MVP plan");
-  assert(plansMarkup.includes("Aguardando validação"), "Pro plan should stay marked as validation-only");
-  assert(plansMarkup.includes("CRITÉRIO DO MVP"), "Plans screen should explain when Pro becomes eligible");
+  assert(plansMarkup.includes('id="pro-plan-button"'), "Pro plan should expose a checkout CTA");
+  assert(app.includes("startProCheckout"), "Client should start Pro checkout through the API");
+  assert(billing.includes("MERCADO_PAGO_ACCESS_TOKEN"), "Billing should keep Mercado Pago token on the server");
+  assert(billing.includes("fetchSubscriptionFromNotification"), "Webhook should verify events by fetching provider resource");
+  assert(billingMigration.includes("create table if not exists public.subscriptions"), "Billing migration should create subscriptions table");
+  assert(billingMigration.includes("alter table public.subscriptions enable row level security"), "Subscriptions table should have RLS");
+  assert(schema.includes("create table if not exists public.subscriptions"), "Consolidated schema should include subscriptions");
   assert(schema.includes("alter table public.tasks enable row level security"), "Tasks RLS should be enabled");
   assert(schema.includes("auth.uid() = user_id"), "RLS should scope rows by user_id");
   assert(schema.includes("with check (auth.uid() = user_id)"), "RLS updates should validate final user_id");

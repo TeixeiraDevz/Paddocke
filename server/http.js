@@ -34,4 +34,22 @@ function readJsonBody(request) {
   });
 }
 
-module.exports = { readJsonBody, securityHeaders, sendJson };
+function readRawBody(request, limit = 1_000_000) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    let size = 0;
+    request.on("data", (chunk) => {
+      size += chunk.length;
+      if (size > limit) {
+        reject(new Error("Payload muito grande"));
+        request.destroy();
+        return;
+      }
+      chunks.push(chunk);
+    });
+    request.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
+    request.on("error", reject);
+  });
+}
+
+module.exports = { readJsonBody, readRawBody, securityHeaders, sendJson };

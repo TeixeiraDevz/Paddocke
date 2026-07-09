@@ -1,7 +1,8 @@
 const { createAiResponse } = require("./assistant");
 const { isAdminUser, requireAuthenticatedUser } = require("./auth");
+const { createProCheckout, getBillingStatus, processWebhook } = require("./billing/mercado-pago");
 const { getPublicConfig } = require("./config");
-const { readJsonBody, sendJson } = require("./http");
+const { readJsonBody, readRawBody, sendJson } = require("./http");
 const { saveNotificationPreferences, sendDailyDigest } = require("./notifications");
 const { rateLimit } = require("./rate-limit");
 
@@ -33,6 +34,51 @@ async function handleApi(request, response, pathname) {
     } catch (error) {
       console.error("Falha no assistente:", error.message);
       sendJson(response, 503, { ai: false, error: "Assistente indisponivel" });
+    }
+    return true;
+  }
+
+  if (request.method === "GET" && pathname === "/api/billing/status") {
+    if (rateLimit(request, response, { key: "billing-status", max: 60, windowMs: 60_000 })) return true;
+    const user = await requireAuthenticatedUser(request, response);
+    if (!user) return true;
+    try {
+      const result = await getBillingStatus({ request, user });
+      sendJson(response, 200, result);
+    } catch (error) {
+      console.error("Falha ao consultar billing:", error.message);
+      sendJson(response, error.status || 503, { error: "Billing indisponivel no momento" });
+    }
+    return true;
+  }
+
+  if (request.method === "POST" && pathname === "/api/billing/checkout") {
+    if (rateLimit(request, response, { key: "billing-checkout", max: 8, windowMs: 10 * 60_000 })) return true;
+    const user = await requireAuthenticatedUser(request, response);
+    if (!user) return true;
+    try {
+      const result = await createProCheckout({ request, user });
+      sendJson(response, result.checkoutUrl ? 200 : 502, result);
+    } catch (error) {
+      console.error("Falha ao criar checkout:", error.message);
+      sendJson(response, error.status || 503, {
+        error: error.status === 503
+          ? "Mercado Pago ainda nao configurado no servidor"
+          : "Nao foi possivel iniciar a assinatura agora"
+      });
+    }
+    return true;
+  }
+
+  if (request.method === "POST" && pathname === "/api/billing/webhook/mercadopago") {
+    if (rateLimit(request, response, { key: "billing-webhook", max: 120, windowMs: 60_000 })) return true;
+    try {
+      const body = await readRawBody(request);
+      const result = await processWebhook({ request, body });
+      sendJson(response, 200, result);
+    } catch (error) {
+      console.error("Webhook Mercado Pago recusado:", error.message);
+      sendJson(response, error.status || 400, { received: false });
     }
     return true;
   }

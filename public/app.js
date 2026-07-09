@@ -37,6 +37,7 @@ let supabaseClient = null;
 let runtimeConfig = {};
 let currentUser = null;
 let currentUserIsAdmin = false;
+let billingStatus = { plan: "free", status: "inactive" };
 let remoteUserLoadedId = "";
 let remoteSyncTimer = null;
 let remoteSyncing = false;
@@ -588,6 +589,7 @@ function updateUserInterface(user) {
   const welcome = document.querySelector(".welcome-row h1");
   if (welcome) welcome.textContent = `Bom dia, ${profile.name}.`;
   renderProfile();
+  renderBillingStatus();
 }
 
 function showAuthScreen(message = "") {
@@ -613,6 +615,7 @@ async function enterApp(user = null) {
   updateUserInterface(user);
   if (!appInitialized) initializeApp();
   if (user && supabaseClient) loadRemoteWorkspace(user);
+  if (user) loadBillingStatus();
 }
 
 async function loadSupabaseClient(config) {
@@ -640,6 +643,74 @@ async function getAuthenticatedApiHeaders(extraHeaders = {}) {
   const token = data.session?.access_token;
   if (token) headers.Authorization = `Bearer ${token}`;
   return headers;
+}
+
+function renderBillingStatus() {
+  const button = document.querySelector("#pro-plan-button");
+  if (!button) return;
+  button.disabled = false;
+  if (billingStatus.plan === "pro") {
+    button.textContent = "Pro ativo";
+    button.disabled = true;
+    return;
+  }
+  if (billingStatus.status === "pending") {
+    button.textContent = "Concluir pagamento";
+    return;
+  }
+  button.textContent = currentUser ? "Assinar Pro" : "Entrar para assinar";
+}
+
+async function loadBillingStatus() {
+  if (!currentUser || !supabaseClient) {
+    billingStatus = { plan: "free", status: "inactive" };
+    renderBillingStatus();
+    return;
+  }
+  try {
+    const response = await fetch("/api/billing/status", {
+      headers: await getAuthenticatedApiHeaders()
+    });
+    if (!response.ok) return;
+    billingStatus = await response.json();
+    renderBillingStatus();
+  } catch (error) {
+    console.warn("Falha ao carregar assinatura:", error.message);
+  }
+}
+
+async function startProCheckout() {
+  if (!currentUser || !supabaseClient) {
+    showToast("Entre na sua conta para assinar o Pro.");
+    setAuthView("login");
+    showAuthScreen();
+    return;
+  }
+
+  const button = document.querySelector("#pro-plan-button");
+  const previousLabel = button?.textContent || "Assinar Pro";
+  if (button) {
+    button.disabled = true;
+    button.textContent = "Abrindo checkout...";
+  }
+
+  try {
+    const response = await fetch("/api/billing/checkout", {
+      method: "POST",
+      headers: await getAuthenticatedApiHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ plan: "pro" })
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload.error || "Nao foi possivel iniciar o checkout.");
+    if (!payload.checkoutUrl) throw new Error("Checkout ainda nao retornou link de pagamento.");
+    window.location.assign(payload.checkoutUrl);
+  } catch (error) {
+    showToast(error.message || "Nao foi possivel abrir o checkout do Pro.", "error");
+    if (button) {
+      button.disabled = false;
+      button.textContent = previousLabel;
+    }
+  }
 }
 
 async function submitAuth(event) {
@@ -2811,6 +2882,7 @@ function bindEvents() {
   document.querySelector("#hero-focus-button").addEventListener("click", () => {
     showView("focus");
   });
+  document.querySelector("#pro-plan-button").addEventListener("click", startProCheckout);
 
   document.querySelectorAll(".pomodoro-tabs button").forEach((button) => {
     button.addEventListener("click", () => setPomodoroMode(button.dataset.mode));
