@@ -109,40 +109,11 @@ Crie um arquivo `.env` a partir de `.env.example` e informe as chaves desejadas:
 - `EMAIL_FROM`: remetente validado no Resend.
 - `SUPABASE_URL`: URL publica do projeto Supabase.
 - `SUPABASE_ANON_KEY`: chave anon/publica do projeto Supabase.
-- `SUPABASE_SERVICE_ROLE_KEY`: chave secreta usada apenas no servidor para billing e webhooks.
 - `SUPABASE_HOMO_URL`: opcional, URL publica do Supabase de homologacao.
 - `SUPABASE_HOMO_ANON_KEY`: opcional, chave anon/publica de homologacao.
-- `SUPABASE_HOMO_SERVICE_ROLE_KEY`: opcional, service role do Supabase de homologacao.
-- `MERCADO_PAGO_ACCESS_TOKEN`: token privado do Mercado Pago para criar assinaturas.
-- `MERCADO_PAGO_PRO_PRICE`: preco mensal do Pro em BRL, por exemplo `19.90`.
-- `MERCADO_PAGO_WEBHOOK_SECRET`: segredo de assinatura do webhook do Mercado Pago.
 
 Sem essas chaves, tarefas, voz, Pomodoro e interpretacao local continuam
 funcionando. Sem Supabase, o app usa `localStorage`.
-
-## Billing com Mercado Pago
-
-O plano Pro usa checkout de assinatura do Mercado Pago. O fluxo fica assim:
-
-1. O usuario autenticado clica em `Assinar Pro`.
-2. O servidor cria uma assinatura no Mercado Pago em `/api/billing/checkout`.
-3. O usuario e redirecionado para o checkout hospedado pelo Mercado Pago.
-4. O webhook `/api/billing/webhook/mercadopago` registra o evento, busca a
-   assinatura no Mercado Pago pelo token do servidor e atualiza
-   `public.subscriptions`.
-5. O app consulta `/api/billing/status` para saber se a conta esta Free ou Pro.
-
-Para ativar em um ambiente:
-
-1. Aplique `supabase/migrations/20260709_0009_billing.sql`.
-2. Configure `SUPABASE_SERVICE_ROLE_KEY`, `MERCADO_PAGO_ACCESS_TOKEN`,
-   `MERCADO_PAGO_PRO_PRICE` e `MERCADO_PAGO_WEBHOOK_SECRET` no Vercel.
-3. No painel do Mercado Pago, cadastre o webhook:
-   `https://SEU-DOMINIO/api/billing/webhook/mercadopago`.
-4. Rode QA antes de publicar em producao.
-
-Nunca coloque access token do Mercado Pago ou service role do Supabase no
-frontend. Essas chaves devem existir somente como variaveis privadas do Vercel.
 
 ## Supabase
 
@@ -208,7 +179,7 @@ nunca deve ficar no navegador; ela entra apenas no `.env`.
 ### Configuracao da OpenAI
 
 1. Acesse `https://platform.openai.com/` e entre na sua conta.
-2. Confira se o projeto tem billing/creditos ativos.
+2. Confira se o projeto tem creditos ativos para uso da API.
 3. Va em `API keys` e clique em `Create new secret key`.
 4. Copie a chave no momento da criacao. Ela nao aparece completa novamente.
 5. No arquivo `.env`, preencha:

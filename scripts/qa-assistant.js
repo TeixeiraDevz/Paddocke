@@ -96,6 +96,36 @@ async function main() {
     }
   ));
 
+  results.push(await runCase(
+    "create task",
+    { command: "Crie uma tarefa chamada Estudar Java para amanha as 15:25 no campo faculdade", today, tasks },
+    (result) => {
+      assert(result?.action?.type === "create_task", "Create task should trigger create_task");
+      assert(result.action.title === "Estudar Java", "Create task should keep only the task title");
+      assert(result.action.date === "2026-07-10", "Create task should parse tomorrow");
+      assert(result.action.time === "15:25", "Create task should parse time");
+      assert(result.action.category === "Faculdade", "Create task should parse category");
+    }
+  ));
+
+  results.push(await runCase(
+    "complete task",
+    { command: "Concluir Revisar Java", today, tasks },
+    (result) => {
+      assert(result?.action?.type === "complete_task", "Complete task should trigger complete_task");
+      assert(result.action.taskId === "task-2", "Complete task should target the matching task");
+    }
+  ));
+
+  results.push(await runCase(
+    "calendar concept",
+    { command: "Explique como funciona o calendario", today, tasks },
+    (result) => {
+      assert(result?.action?.type === "none", "Calendar concept should not trigger an action");
+      assert(/organiza suas tarefas/i.test(result.reply), "Calendar concept should explain scheduling");
+    }
+  ));
+
   console.table(results.map((check) => ({ check })));
 }
 

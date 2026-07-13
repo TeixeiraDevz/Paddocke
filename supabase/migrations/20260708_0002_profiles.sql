@@ -6,7 +6,6 @@ create table if not exists public.profiles (
   focus_sessions integer not null default 0 check (focus_sessions >= 0),
   streak_record integer not null default 0 check (streak_record >= 0),
   theme text not null default 'dark' check (theme in ('dark', 'light')),
-  plan text not null default 'free' check (plan in ('free', 'pro', 'teams')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -14,10 +13,6 @@ create table if not exists public.profiles (
 alter table public.profiles
   add column if not exists theme text not null default 'dark'
   check (theme in ('dark', 'light'));
-
-alter table public.profiles
-  add column if not exists plan text not null default 'free'
-  check (plan in ('free', 'pro', 'teams'));
 
 grant select, insert, update on table public.profiles to authenticated;
 grant select, insert, update, delete on table public.profiles to service_role;

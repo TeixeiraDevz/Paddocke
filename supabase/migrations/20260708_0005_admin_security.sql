@@ -30,7 +30,6 @@ begin
     if new.xp >= 300000 then
       new.xp := least(coalesce(old.xp, 0), 299999);
     end if;
-    new.plan := coalesce(old.plan, 'free');
   end if;
   return new;
 end;
